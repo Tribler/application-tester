@@ -1,14 +1,14 @@
 import logging
 import os
 from bisect import bisect
-from random import random, randint
+from random import random, randint, choice
 
 from twisted.internet.task import LoopingCall
 
 from actions.page_action import RandomPageAction
 from actions.search_action import RandomSearchAction
 from actions.start_download_action import StartRandomDownloadAction
-from actions.stop_download_action import StopRandomDownloadAction
+from actions.remove_download_action import RemoveRandomDownloadAction
 
 
 class Executor(object):
@@ -19,6 +19,21 @@ class Executor(object):
 
         self.random_action_lc = LoopingCall(self.perform_random_action)
         self.random_action_lc.start(10)
+
+        self.check_task_completion_lc = LoopingCall(self.check_task_completion)
+        self.check_task_completion_lc.start(2)
+
+    def check_task_completion(self):
+        """
+        This method periodically checks whether Python scripts have been completed.
+        Completion of such a script is indicated by presence of a .done file.
+        """
+        for file in os.listdir(os.path.join(os.getcwd(), "tmp_scripts")):
+            if file.endswith(".done"):
+                task_id = file[:-5]
+                self._logger.info("Task with ID %s completed!", task_id)
+                os.remove(os.path.join(os.getcwd(), "tmp_scripts", file))
+                os.remove(os.path.join(os.getcwd(), "tmp_scripts", "%s.py" % task_id))
 
     def weighted_choice(self, choices):
         values, weights = zip(*choices)
@@ -39,12 +54,29 @@ class Executor(object):
         Execute a given action.
         """
         self._logger.info("Executing action: %s" % action)
-        self.execute_code(action.generate_code())
 
-    def execute_code(self, code):
-        print code
-        self._logger.info("Executing code: %s" % code[:100])
-        os.system("%s \"%s\"" % (self.tribler_path, code))
+        task_id = ''.join(choice('0123456789abcdef') for _ in xrange(10))
+        tmp_scripts_dir = os.path.join(os.getcwd(), "tmp_scripts")
+        code_file_path = os.path.join(tmp_scripts_dir, "%s.py" % task_id)
+
+        # First, write a function to end the program to the file
+        code = """def exit_script():
+    import sys
+    open('%s', 'a').close()
+    exit(0)\n\n""" % (os.path.join(tmp_scripts_dir, "%s.done" % task_id))
+
+        code += action.generate_code() + '\nexit_script()'
+
+        # Write the generated code to a separate file
+        with open(code_file_path, "wb") as code_file:
+            code_file.write(code)
+
+        # Let Tribler execute this code
+        self.execute_code(code_file_path)
+
+    def execute_code(self, code_file_path):
+        self._logger.info("Executing code file: %s" % code_file_path)
+        os.system("%s \"code:%s\"" % (self.tribler_path, code_file_path))
 
     def perform_random_action(self):
         """
@@ -60,7 +92,7 @@ class Executor(object):
             action = RandomSearchAction()
         elif action == 'start_download':
             action = StartRandomDownloadAction()
-        elif action == 'stop_download':
-            action = StopRandomDownloadAction()
+        elif action == 'remove_download':
+            action = RemoveRandomDownloadAction()
 
         self.execute_action(action)

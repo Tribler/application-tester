@@ -10,17 +10,22 @@ class ActionSequence(object):
         self.actions.append(action)
 
     def generate_code(self):
-        code = "code:"
+        required_imports = set()
+        code = ""
         for action in self.actions:
             for required_import in action.required_imports():
-                code += required_import + "; "
+                required_imports.add(required_import)
         for required_import in self.required_imports():
-            code += required_import + "; "
+            required_imports.add(required_import)
+
+        for required_import in required_imports:
+            code += required_import + "\n"
+
+        code += "\n"
 
         for action in self.actions:
-            code += action.action_code() + "; "
+            code += action.action_code() + "\n"
 
-        code = code.replace('\n', '; ')
         return code
 
     def required_imports(self):
