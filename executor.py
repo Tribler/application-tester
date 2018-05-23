@@ -63,7 +63,7 @@ class Executor(object):
         code = """def exit_script():
     import sys
     open('%s', 'a').close()
-    exit(0)\n\n""" % (os.path.join(tmp_scripts_dir, "%s.done" % task_id))
+    sys.exit(0)\n\n""" % (os.path.join(tmp_scripts_dir, "%s.done" % task_id))
 
         code += action.generate_code() + '\nexit_script()'
 
