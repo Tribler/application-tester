@@ -33,7 +33,10 @@ class Executor(object):
                 task_id = file[:-5]
                 self._logger.info("Task with ID %s completed!", task_id)
                 os.remove(os.path.join(os.getcwd(), "tmp_scripts", file))
-                os.remove(os.path.join(os.getcwd(), "tmp_scripts", "%s.py" % task_id))
+
+                python_file_path = os.path.join(os.getcwd(), "tmp_scripts", "%s.py" % task_id)
+                if os.path.exists(python_file_path):
+                    os.remove(python_file_path)
 
     def weighted_choice(self, choices):
         values, weights = zip(*choices)

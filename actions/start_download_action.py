@@ -31,7 +31,8 @@ class StartRandomDownloadAction(StartDownloadAction):
     def __init__(self):
         with open("data/torrent_links.txt") as torrent_links_file:
             content = torrent_links_file.read()
-            links = content.split('\n')
+            links = content.split('\n')[:-1]  # Remove the newline
+
         rand_link = choice(links)
 
         super(StartRandomDownloadAction, self).__init__(rand_link)

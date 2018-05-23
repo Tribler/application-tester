@@ -19,7 +19,7 @@ class SearchAction(ActionSequence):
         # Add the actions to perform a search
         self.add_action(CustomAction("window.top_search_bar.setText('')"))
         self.add_action(ClickAction("window.top_search_bar"))
-        self.add_action(KeysAction("window.top_search_bar", self.search_query, 400))
+        self.add_action(KeysAction("window.top_search_bar", self.search_query, 200))
         self.add_action(KeyAction("window.top_search_bar", "Key_Enter"))
 
 

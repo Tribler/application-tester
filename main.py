@@ -1,5 +1,6 @@
 import argparse
 
+import logging
 from twisted.internet import reactor
 
 from executor import Executor
@@ -14,6 +15,9 @@ if __name__ == "__main__":
     parser.add_argument('tribler_executable', metavar='path', type=str, help='the full path to the Tribler executable')
 
     args = parser.parse_args()
+
+    # Setup logging
+    logging.basicConfig(level=logging.DEBUG)
 
     reactor.callWhenRunning(start_executor, args)
     reactor.run()
