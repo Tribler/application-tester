@@ -5,6 +5,7 @@ from random import random, randint, choice
 
 from twisted.internet.task import LoopingCall
 
+from actions.explore_download_action import ExploreDownloadAction
 from actions.page_action import RandomPageAction
 from actions.search_action import RandomSearchAction
 from actions.start_download_action import StartRandomDownloadAction
@@ -86,7 +87,7 @@ class Executor(object):
         This method performs a random action in Tribler. There are various actions possible that can occur with
         different probabilities.
         """
-        probs = [('random_page', 50), ('search', 25), ('start_download', 20), ('remove_download', 5)]
+        probs = [('random_page', 40), ('search', 25), ('start_download', 20), ('remove_download', 5), ('explore_download', 10)]
         action = self.weighted_choice(probs)
         self._logger.info("Performing action: %s", action)
         if action == 'random_page':
@@ -97,5 +98,7 @@ class Executor(object):
             action = StartRandomDownloadAction()
         elif action == 'remove_download':
             action = RemoveRandomDownloadAction()
+        elif action == 'explore_download':
+            action = ExploreDownloadAction()
 
         self.execute_action(action)
