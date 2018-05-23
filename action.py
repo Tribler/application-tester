@@ -18,11 +18,11 @@ class Action(object):
         pass
 
     def generate_code(self):
-        code = "code:"
+        code = ""
         for import_line in self.required_imports():
-            code += import_line + "; "
+            code += import_line + "\n"
+        code += "\n"
         code += self.action_code()
-        code = code.replace('\n', '; ')
         return code
 
     @abstractmethod
