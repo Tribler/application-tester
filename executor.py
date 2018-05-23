@@ -21,7 +21,7 @@ class Executor(object):
         self._logger = logging.getLogger(self.__class__.__name__)
 
         self.random_action_lc = LoopingCall(self.perform_random_action)
-        self.random_action_lc.start(10)
+        self.random_action_lc.start(15)
 
         self.check_task_completion_lc = LoopingCall(self.check_task_completion)
         self.check_task_completion_lc.start(2)

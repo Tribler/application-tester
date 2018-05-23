@@ -19,7 +19,7 @@ class StartDownloadAction(ActionSequence):
         self.add_action(CustomAction("window.dialog.dialog_widget.dialog_input.setText('%s')" % download_uri))
         self.add_action(WaitAction(1000))
         self.add_action(ClickAction("window.dialog.buttons[0]"))
-        self.add_action(WaitAction(5000))
+        self.add_action(WaitAction(7000))
         self.add_action(ClickAction("window.dialog.dialog_widget.download_button"))
         self.add_action(WaitAction(2000))
         self.add_action(CustomAction("""if window.dialog:
