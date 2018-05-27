@@ -9,6 +9,7 @@ from actions.browse_discovered_action import BrowseDiscoveredAction
 from actions.explore_channel_action import ExploreChannelAction
 from actions.explore_download_action import ExploreDownloadAction
 from actions.page_action import RandomPageAction
+from actions.screenshot_action import ScreenshotAction
 from actions.search_action import RandomSearchAction
 from actions.start_download_action import StartRandomDownloadAction
 from actions.remove_download_action import RemoveRandomDownloadAction
@@ -106,5 +107,7 @@ class Executor(object):
             action = BrowseDiscoveredAction()
         elif action == 'explore_channel':
             action = ExploreChannelAction()
+        elif action == 'screenshot':
+            action = ScreenshotAction()
 
         self.execute_action(action)
