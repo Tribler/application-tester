@@ -13,6 +13,7 @@ from actions.screenshot_action import ScreenshotAction
 from actions.search_action import RandomSearchAction
 from actions.start_download_action import StartRandomDownloadAction
 from actions.remove_download_action import RemoveRandomDownloadAction
+from actions.start_vod_action import StartVODAction
 
 
 class Executor(object):
@@ -90,7 +91,7 @@ class Executor(object):
         This method performs a random action in Tribler. There are various actions possible that can occur with
         different probabilities.
         """
-        probs = [('random_page', 30), ('search', 15), ('start_download', 20), ('remove_download', 5), ('explore_download', 10), ('browse_discovered', 10), ('explore_channel', 10)]
+        probs = [('random_page', 30), ('search', 15), ('start_download', 20), ('remove_download', 5), ('explore_download', 10), ('browse_discovered', 5), ('explore_channel', 10), ('start_vod', 5)]
         action = self.weighted_choice(probs)
         self._logger.info("Performing action: %s", action)
         if action == 'random_page':
@@ -109,5 +110,7 @@ class Executor(object):
             action = ExploreChannelAction()
         elif action == 'screenshot':
             action = ScreenshotAction()
+        elif action == 'start_vod':
+            action = StartVODAction()
 
         self.execute_action(action)
