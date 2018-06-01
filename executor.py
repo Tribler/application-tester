@@ -71,10 +71,14 @@ class Executor(object):
         code_file_path = os.path.join(tmp_scripts_dir, "%s.py" % task_id)
 
         # First, write a function to end the program to the file
+        destination = os.path.join(tmp_scripts_dir, "%s.done" % task_id)
+        if os.name == 'nt':
+            destination = destination.replace('\\', '\\\\')
+
         code = """def exit_script():
     import sys
     open('%s', 'a').close()
-    sys.exit(0)\n\n""" % (os.path.join(tmp_scripts_dir, "%s.done" % task_id))
+    sys.exit(0)\n\n""" % destination
 
         code += action.generate_code() + '\nexit_script()'
 
