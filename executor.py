@@ -68,6 +68,8 @@ class Executor(object):
 
         task_id = ''.join(choice('0123456789abcdef') for _ in xrange(10))
         tmp_scripts_dir = os.path.join(os.getcwd(), "tmp_scripts")
+        if not os.path.exists(tmp_scripts_dir):
+            os.makedirs(tmp_scripts_dir)
         code_file_path = os.path.join(tmp_scripts_dir, "%s.py" % task_id)
 
         # First, write a function to end the program to the file
