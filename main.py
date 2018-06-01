@@ -7,7 +7,7 @@ from executor import Executor
 
 
 def start_executor(args):
-    executor = Executor(args.tribler_executable, args.p)
+    executor = Executor(args.tribler_executable, args.plain)
 
 
 if __name__ == "__main__":
