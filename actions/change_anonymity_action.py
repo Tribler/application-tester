@@ -10,7 +10,7 @@ class ChangeAnonymityAction(ActionSequence):
     This action will change the anonymity of a random download.
     """
 
-    def __init__(self):
+    def __init__(self, allow_plain=False):
         super(ChangeAnonymityAction, self).__init__()
 
         self.add_action(PageAction('downloads'))
@@ -19,7 +19,8 @@ class ChangeAnonymityAction(ActionSequence):
     exit_script()
         """))
         self.add_action(ClickAction('window.downloads_list.topLevelItem(randint(0, len(window.downloads_page.download_widgets.keys()) - 1)).progress_slider'))
-        self.add_action(CustomAction("window.downloads_page.change_anonymity(randint(0, 3))"))
+        min_hops = 0 if allow_plain else 1
+        self.add_action(CustomAction("window.downloads_page.change_anonymity(randint(%d, 3))" % min_hops))
 
     def required_imports(self):
         return ["from random import randint"]

@@ -20,9 +20,10 @@ from actions.subscribe_unsubscribe_action import SubscribeUnsubscribeAction
 
 class Executor(object):
 
-    def __init__(self, tribler_path):
+    def __init__(self, tribler_path, allow_plain_downloads):
         self.tribler_path = tribler_path
         self._logger = logging.getLogger(self.__class__.__name__)
+        self.allow_plain_downloads = allow_plain_downloads
 
         self.random_action_lc = LoopingCall(self.perform_random_action)
         self.random_action_lc.start(15)
@@ -117,7 +118,7 @@ class Executor(object):
         elif action == 'start_vod':
             action = StartVODAction()
         elif action == 'change_anonymity':
-            action = ChangeAnonymityAction()
+            action = ChangeAnonymityAction(allow_plain=self.allow_plain_downloads)
         elif action == 'subscribe_unsubscribe':
             action = SubscribeUnsubscribeAction()
 
