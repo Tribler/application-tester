@@ -62,6 +62,7 @@ class Executor(object):
                 self._logger.error("Tribler crashed! Stack trace: %s", result)
                 # Stop the execution of random actions and send a message to the IRC
                 self.random_action_lc.stop()
+                self.check_crash_lc.stop()
                 self.tribler_crashed = True
                 if self.irc_manager:
                     self.irc_manager.irc.send_channel_message("Tribler crashed with stack trace: %s" % result)
