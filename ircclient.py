@@ -4,10 +4,6 @@ from twisted.words.protocols import irc
 
 class Bot(irc.IRCClient):
 
-    def __init__(self):
-        irc.IRCClient.__init__(self)
-        self.heartbeatInterval = 20
-
     def _get_nickname(self):
         return self.factory.nickname
     nickname = property(_get_nickname)
@@ -50,6 +46,7 @@ class BotFactory(protocol.ClientFactory):
         self.channel = channel
         self.nickname = nickname
         self.bot = Bot()
+        self.bot.heartbeatInterval = 20
         self.bot.executor = executor
 
     def buildProtocol(self, addr):
