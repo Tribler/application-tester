@@ -3,6 +3,7 @@ import os
 from bisect import bisect
 from random import random, randint, choice
 
+import time
 from twisted.internet.defer import Deferred
 from twisted.internet.task import LoopingCall
 
@@ -19,6 +20,7 @@ from actions.remove_download_action import RemoveRandomDownloadAction
 from actions.start_vod_action import StartVODAction
 from actions.subscribe_unsubscribe_action import SubscribeUnsubscribeAction
 from ircclient import IRCManager
+from requestmgr import HTTPRequestManager
 
 
 class Executor(object):
@@ -38,11 +40,18 @@ class Executor(object):
         self.check_crash_lc = LoopingCall(self.check_crash)
         self.check_crash_lc.start(10, now=False)
 
+        self.start_time = time.time()
+        self.request_manager = HTTPRequestManager()
         self.irc_manager = None
+        self.tribler_crashed = False
 
         if irc_id:
-            self.irc_manager = IRCManager(irc_id)
+            self.irc_manager = IRCManager(self, irc_id)
             self.irc_manager.start()
+
+    @property
+    def uptime(self):
+        return time.time() - self.start_time
 
     def check_crash(self):
         """
@@ -53,6 +62,7 @@ class Executor(object):
                 self._logger.error("Tribler crashed! Stack trace: %s", result)
                 # Stop the execution of random actions and send a message to the IRC
                 self.random_action_lc.stop()
+                self.tribler_crashed = True
                 if self.irc_manager:
                     self.irc_manager.irc.send_channel_message("Tribler crashed with stack trace: %s" % result)
 

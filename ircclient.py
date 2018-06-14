@@ -1,6 +1,5 @@
 from twisted.internet import protocol, reactor
 from twisted.words.protocols import irc
-from twisted.words.protocols.irc import lowQuote
 
 
 class Bot(irc.IRCClient):
@@ -17,15 +16,37 @@ class Bot(irc.IRCClient):
         print "Joined %s." % channel
 
     def privmsg(self, user, channel, message):
-        print message
+        if message.startswith("!"):
+            self.parse_command(message)
+
+    def parse_command(self, message):
+        parts = message.split(" ")
+        if len(parts) != 2:
+            return
+
+        command = parts[0][1:]
+        botname = parts[1]
+
+        if botname != self.factory.nickname:
+            return
+
+        # This is a command for this bot
+        if command == "status":
+            self.msg(self.factory.channel, "crashed? %s, uptime: %d seconds" % (self.executor.tribler_crashed, self.executor.uptime))
+        elif command == "balance":
+            def on_token_balance(balance):
+                self.msg(self.factory.channel, "balance: %d MB" % balance)
+
+            self.executor.request_manager.get_token_balance().addCallback(on_token_balance)
 
 
 class BotFactory(protocol.ClientFactory):
 
-    def __init__(self, channel, nickname='twistedbot12389654'):
+    def __init__(self, channel, executor, nickname='twistedbot12389654'):
         self.channel = channel
         self.nickname = nickname
         self.bot = Bot()
+        self.bot.executor = executor
 
     def buildProtocol(self, addr):
         self.bot.factory = self
@@ -47,8 +68,8 @@ class IRCManager(object):
     This class manages the IRC connection with the Freenode server.
     """
 
-    def __init__(self, nickname):
-        self.irc = BotFactory('#triblerapptester', nickname=nickname)
+    def __init__(self, executor, nickname):
+        self.irc = BotFactory('#triblerapptester', executor, nickname=nickname)
 
     def start(self):
         reactor.connectTCP('irc.freenode.net', 6667, self.irc)
