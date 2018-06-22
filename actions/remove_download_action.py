@@ -19,8 +19,11 @@ class RemoveRandomDownloadAction(ActionSequence):
     exit_script()
         """))
         self.add_action(ClickAction('window.downloads_list.topLevelItem(randint(0, len(window.downloads_page.download_widgets.keys()) - 1)).progress_slider'))
+        self.add_action(WaitAction(1000))
         self.add_action(ClickAction('window.remove_download_button'))
+        self.add_action(WaitAction(1000))
         self.add_action(ClickAction('window.downloads_page.dialog.buttons[1]'))
+        self.add_action(WaitAction(1000))
 
     def required_imports(self):
         return ["from random import randint"]
