@@ -38,7 +38,7 @@ class Executor(object):
         self.check_task_completion_lc.start(2, now=False)
 
         self.check_crash_lc = LoopingCall(self.check_crash)
-        self.check_crash_lc.start(10, now=False)
+        self.check_crash_lc.start(11, now=False)
 
         self.start_time = time.time()
         self.request_manager = HTTPRequestManager()
