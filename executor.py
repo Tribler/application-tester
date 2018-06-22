@@ -137,9 +137,10 @@ class Executor(object):
 def exit_script():
     import sys
     global return_value
+    print 'Done with task %s, writing .done file'
     with open('%s', 'a') as done_file:
         done_file.write(return_value)
-    sys.exit(0)\n\n""" % destination
+    sys.exit(0)\n\n""" % (task_id, destination)
 
         code += action.generate_code() + '\nexit_script()'
 
