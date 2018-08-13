@@ -59,13 +59,15 @@ class Executor(object):
         """
         def on_crash_result(result):
             if result:
-                self._logger.error("Tribler crashed! Stack trace: %s", result)
+                self._logger.error("Tribler crashed after uptime of %s sec! Stack trace: %s", self.uptime, result)
                 # Stop the execution of random actions and send a message to the IRC
                 self.random_action_lc.stop()
                 self.check_crash_lc.stop()
                 self.tribler_crashed = True
                 if self.irc_manager:
                     self.irc_manager.irc.send_channel_message("Tribler crashed with stack trace: %s" % result)
+
+                exit(1)
 
         self.execute_action(CheckCrashAction()).addCallback(on_crash_result)
 
