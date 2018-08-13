@@ -5,6 +5,9 @@ from bisect import bisect
 from random import random, randint, choice
 
 import time
+
+import sys
+from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 from twisted.internet.task import LoopingCall
 
@@ -16,6 +19,7 @@ from actions.explore_download_action import ExploreDownloadAction
 from actions.page_action import RandomPageAction
 from actions.screenshot_action import ScreenshotAction
 from actions.search_action import RandomSearchAction
+from actions.shutdown_action import ShutdownAction
 from actions.start_download_action import StartRandomDownloadAction
 from actions.remove_download_action import RemoveRandomDownloadAction
 from actions.start_vod_action import StartVODAction
@@ -26,10 +30,10 @@ from requestmgr import HTTPRequestManager
 
 class Executor(object):
 
-    def __init__(self, tribler_path, allow_plain_downloads, irc_id):
-        self.tribler_path = tribler_path
+    def __init__(self, args):
+        self.tribler_path = args.tribler_executable
         self._logger = logging.getLogger(self.__class__.__name__)
-        self.allow_plain_downloads = allow_plain_downloads
+        self.allow_plain_downloads = args.plain
         self.pending_tasks = {}  # Dictionary of pending tasks
 
         self.random_action_lc = LoopingCall(self.perform_random_action)
@@ -46,9 +50,26 @@ class Executor(object):
         self.irc_manager = None
         self.tribler_crashed = False
 
-        if irc_id:
-            self.irc_manager = IRCManager(self, irc_id)
+        if args.ircid:
+            self.irc_manager = IRCManager(self, args.ircid)
             self.irc_manager.start()
+
+        if args.duration:
+            reactor.callLater(args.duration, self.stop, 0)
+
+    def stop(self, exit_code):
+        # Stop the execution of random actions and send a message to the IRC
+        self.random_action_lc.stop()
+        self.check_crash_lc.stop()
+
+        def on_tribler_shutdown(_):
+            reactor.stop()
+            try:
+                sys.exit(exit_code)
+            except SystemExit:
+                pass
+
+        self.execute_action(ShutdownAction()).addCallback(on_tribler_shutdown)
 
     @property
     def uptime(self):
@@ -61,14 +82,10 @@ class Executor(object):
         def on_crash_result(result):
             if result:
                 self._logger.error("Tribler crashed after uptime of %s sec! Stack trace: %s", self.uptime, result)
-                # Stop the execution of random actions and send a message to the IRC
-                self.random_action_lc.stop()
-                self.check_crash_lc.stop()
                 self.tribler_crashed = True
                 if self.irc_manager:
                     self.irc_manager.irc.send_channel_message("Tribler crashed with stack trace: %s" % result)
-
-                exit(1)
+                self.stop(1)
 
         self.execute_action(CheckCrashAction()).addCallback(on_crash_result)
 

@@ -9,7 +9,7 @@ from executor import Executor
 
 
 def start_executor(args):
-    executor = Executor(args.tribler_executable, args.plain, args.ircid)
+    executor = Executor(args)
 
 
 if __name__ == "__main__":
@@ -17,6 +17,7 @@ if __name__ == "__main__":
     parser.add_argument('tribler_executable', metavar='path', type=str, help='the full path to the Tribler executable')
     parser.add_argument('-p', '--plain', default=False, type=bool, help='allow plain downloads')
     parser.add_argument('-i', '--ircid', default=None, type=str, help='join IRC with the specified ID')
+    parser.add_argument('-d', '--duration', default=None, type=int, help='run the Tribler application tester for a specific period of time')
 
     args = parser.parse_args()
 
