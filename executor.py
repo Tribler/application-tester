@@ -1,5 +1,6 @@
 import logging
 import os
+import subprocess
 from bisect import bisect
 from random import random, randint, choice
 
@@ -157,7 +158,7 @@ def exit_script():
 
     def execute_code(self, code_file_path):
         self._logger.info("Executing code file: %s" % code_file_path)
-        os.system("%s \"code:%s\"" % (self.tribler_path, code_file_path))
+        subprocess.Popen("%s \"code:%s\"" % (self.tribler_path, code_file_path), shell=True)
 
     def perform_random_action(self):
         """
