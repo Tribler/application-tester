@@ -1,3 +1,4 @@
 **.pyc
 .idea/**
 tmp_scripts/**
+output/**

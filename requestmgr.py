@@ -45,3 +45,9 @@ class HTTPRequestManager(object):
             return json_response["wallets"]["MB"]["balance"]["available"]
 
         return http_get("http://localhost:8085/wallets").addCallback(on_wallets_response)
+
+    def get_downloads(self):
+        """
+        Perform a request to the core to get the downloads
+        """
+        return http_get("http://localhost:8085/downloads")
