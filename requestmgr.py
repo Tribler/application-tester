@@ -51,3 +51,15 @@ class HTTPRequestManager(object):
         Perform a request to the core to get the downloads
         """
         return http_get("http://localhost:8085/downloads")
+
+    def get_memory_history_core(self):
+        """
+        Perform a request to the core to get the memory usage history
+        """
+        return http_get("http://localhost:8085/debug/memory/history")
+
+    def get_cpu_history_core(self):
+        """
+        Perform a request to the core to get the CPU usage history
+        """
+        return http_get("http://localhost:8085/debug/cpu/history")
