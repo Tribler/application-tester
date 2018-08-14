@@ -85,6 +85,8 @@ class Executor(object):
             except SystemExit:
                 pass
 
+        reactor.callLater(20, on_tribler_shutdown, None)  # Give it 20 seconds to shutdown
+
         self.execute_action(ShutdownAction()).addCallback(on_tribler_shutdown)
 
     @property
