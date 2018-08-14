@@ -24,9 +24,11 @@ from actions.start_download_action import StartRandomDownloadAction
 from actions.remove_download_action import RemoveRandomDownloadAction
 from actions.start_vod_action import StartVODAction
 from actions.subscribe_unsubscribe_action import SubscribeUnsubscribeAction
+from actions.wait_action import WaitAction
 from download_monitor import DownloadMonitor
 from ircclient import IRCManager
 from requestmgr import HTTPRequestManager
+from resource_monitor import ResourceMonitor
 
 
 class Executor(object):
@@ -37,8 +39,12 @@ class Executor(object):
         self.allow_plain_downloads = args.plain
         self.pending_tasks = {}  # Dictionary of pending tasks
 
-        self.random_action_lc = LoopingCall(self.perform_random_action)
-        self.random_action_lc.start(15)
+        if not args.silent:
+            self.random_action_lc = LoopingCall(self.perform_random_action)
+            self.random_action_lc.start(15)
+        else:
+            # Trigger Tribler startup through a simple action
+            self.execute_action(WaitAction(1000))
 
         self.check_task_completion_lc = LoopingCall(self.check_task_completion)
         self.check_task_completion_lc.start(2, now=False)
@@ -62,6 +68,10 @@ class Executor(object):
         if args.monitordownloads:
             self.download_monitor = DownloadMonitor(args.monitordownloads)
             reactor.callLater(20, self.download_monitor.start)
+
+        if args.monitorresources:
+            self.resource_monitor = ResourceMonitor(args.monitorresources)
+            reactor.callLater(20, self.resource_monitor.start)
 
     def stop(self, exit_code):
         # Stop the execution of random actions and send a message to the IRC
