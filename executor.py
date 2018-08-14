@@ -24,6 +24,7 @@ from actions.start_download_action import StartRandomDownloadAction
 from actions.remove_download_action import RemoveRandomDownloadAction
 from actions.start_vod_action import StartVODAction
 from actions.subscribe_unsubscribe_action import SubscribeUnsubscribeAction
+from download_monitor import DownloadMonitor
 from ircclient import IRCManager
 from requestmgr import HTTPRequestManager
 
@@ -49,6 +50,7 @@ class Executor(object):
         self.request_manager = HTTPRequestManager()
         self.irc_manager = None
         self.tribler_crashed = False
+        self.download_monitor = None
 
         if args.ircid:
             self.irc_manager = IRCManager(self, args.ircid)
@@ -56,6 +58,10 @@ class Executor(object):
 
         if args.duration:
             reactor.callLater(args.duration, self.stop, 0)
+
+        if args.monitordownloads:
+            self.download_monitor = DownloadMonitor(args.monitordownloads)
+            reactor.callLater(20, self.download_monitor.start)
 
     def stop(self, exit_code):
         # Stop the execution of random actions and send a message to the IRC

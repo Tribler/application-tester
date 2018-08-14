@@ -18,6 +18,7 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--plain', default=False, type=bool, help='allow plain downloads')
     parser.add_argument('-i', '--ircid', default=None, type=str, help='join IRC with the specified ID')
     parser.add_argument('-d', '--duration', default=None, type=int, help='run the Tribler application tester for a specific period of time')
+    parser.add_argument('--monitordownloads', default=None, type=int, help='monitor the downloads with a specified interval in seconds')
 
     args = parser.parse_args()
 
