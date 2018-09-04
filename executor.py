@@ -156,7 +156,7 @@ class Executor(object):
         """
         self._logger.info("Executing action: %s" % action)
 
-        task_id = ''.join(choice('0123456789abcdef') for _ in xrange(10))
+        task_id = ''.join(choice('0123456789abcdef') for _ in range(10))
         task_deferred = Deferred()
         self.pending_tasks[task_id] = task_deferred
 
