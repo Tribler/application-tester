@@ -37,7 +37,9 @@ class Executor(object):
         self.tribler_path = args.tribler_executable
         self._logger = logging.getLogger(self.__class__.__name__)
         self.allow_plain_downloads = args.plain
+        self.magnets_file_path = args.magnetsfile
         self.pending_tasks = {}  # Dictionary of pending tasks
+        self.probabilities = []
 
         if not args.silent:
             self.random_action_lc = LoopingCall(self.perform_random_action)
@@ -72,6 +74,22 @@ class Executor(object):
         if args.monitorresources:
             self.resource_monitor = ResourceMonitor(args.monitorresources)
             reactor.callLater(20, self.resource_monitor.start)
+
+        # Determine probabilities
+        with open(os.path.join(os.getcwd(), "data", "action_weights.txt"), "r") as action_weights_file:
+            content = action_weights_file.read()
+            for line in content.split('\n'):
+                if len(line) == 0:
+                    continue
+
+                if line.startswith('#'):
+                    continue
+
+                parts = line.split('=')
+                if len(parts) < 2:
+                    continue
+
+                self.probabilities.append((parts[0], int(parts[1])))
 
     def stop(self, exit_code):
         # Stop the execution of random actions and send a message to the IRC
@@ -137,6 +155,8 @@ class Executor(object):
                     os.remove(python_file_path)
 
     def weighted_choice(self, choices):
+        if len(choices) == 0:
+            return None
         values, weights = zip(*choices)
         total = 0
         cum_weights = []
@@ -197,20 +217,21 @@ def exit_script():
 
     def perform_random_action(self):
         """
-        This method performs a random action in Tribler. There are various actions possible that can occur with
-        different probabilities.
+        This method performs a random action in Tribler.
+        There are various actions possible that can occur with different probabilities.
         """
-        probs = [('random_page', 20), ('search', 15), ('start_download', 15), ('remove_download', 5),
-                 ('explore_download', 10), ('browse_discovered', 5), ('explore_channel', 10), ('start_vod', 5),
-                 ('change_anonymity', 5), ('subscribe_unsubscribe', 10)]
-        action = self.weighted_choice(probs)
+        action = self.weighted_choice(self.probabilities)
+        if not action:
+            self._logger.warning("No action available!")
+            self.execute_action(WaitAction(1000))
+            return
         self._logger.info("Performing action: %s", action)
         if action == 'random_page':
             action = RandomPageAction()
         elif action == 'search':
             action = RandomSearchAction()
         elif action == 'start_download':
-            action = StartRandomDownloadAction()
+            action = StartRandomDownloadAction(self.magnets_file_path)
         elif action == 'remove_download':
             action = RemoveRandomDownloadAction()
         elif action == 'explore_download':
