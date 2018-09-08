@@ -5,7 +5,7 @@ if(file.exists("output/cpu_stats.csv")){
 
     p <- ggplot(df) + theme_bw()
     p <- p + geom_line(aes(x=time, y=cpu_usage))
-    p <- p + theme(legend.position="bottom", legend.direction="horizontal") + xlab("Time into experiment (sec)") + ylab("CPU usage (%)")
+    p <- p + theme(legend.position="bottom", legend.direction="horizontal") + xlab("Time into experiment (sec)") + ylab("CPU usage (%)") + ggtitle("CPU usage of Tribler core")
     p
 
     ggsave(file="output/cpu_history.png", width=8, height=6, dpi=100)
@@ -17,7 +17,7 @@ if(file.exists("output/memory_stats.csv")){
 
     p <- ggplot(df) + theme_bw()
     p <- p + geom_line(aes(x=time, y=memory_usage))
-    p <- p + theme(legend.position="bottom", legend.direction="horizontal") + xlab("Time into experiment (sec)") + ylab("Memory usage (MB)")
+    p <- p + theme(legend.position="bottom", legend.direction="horizontal") + xlab("Time into experiment (sec)") + ylab("Memory usage (MB)") + ggtitle("Memory usage of Tribler core")
     p
 
     ggsave(file="output/memory_history.png", width=8, height=6, dpi=100)
