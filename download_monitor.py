@@ -26,7 +26,7 @@ class DownloadMonitor(object):
 
         self.download_stats_file_path = os.path.join(output_dir, 'download_stats.csv')
         with open(self.download_stats_file_path, "w") as output_file:
-            output_file.write("time,infohash,status,speed_up,speed_down\n")
+            output_file.write("time,infohash,status,speed_up,speed_down,progress\n")
 
     def start(self):
         """
@@ -39,11 +39,12 @@ class DownloadMonitor(object):
         for download in downloads["downloads"]:
             with open(self.download_stats_file_path, "a") as output_file:
                 time_diff = time.time() - self.start_time
-                output_file.write("%s,%s,%s,%s,%s\n" % (time_diff,
-                                                        download["infohash"],
-                                                        download["status"],
-                                                        download["speed_up"],
-                                                        download["speed_down"]))
+                output_file.write("%s,%s,%s,%s,%s,%f\n" % (time_diff,
+                                                           download["infohash"],
+                                                           download["status"],
+                                                           download["speed_up"],
+                                                           download["speed_down"],
+                                                           download["progress"]))
 
     def monitor_downloads(self):
         """
