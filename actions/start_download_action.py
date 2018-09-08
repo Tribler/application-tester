@@ -32,8 +32,8 @@ class StartRandomDownloadAction(StartDownloadAction):
     Start a random download from a pre-defined list.
     """
 
-    def __init__(self):
-        with open("data/torrent_links.txt") as torrent_links_file:
+    def __init__(self, magnets_file_path):
+        with open(magnets_file_path) as torrent_links_file:
             content = torrent_links_file.read()
             links = content.split('\n')[:-1]  # Remove the newline
 

@@ -37,6 +37,7 @@ class Executor(object):
         self.tribler_path = args.tribler_executable
         self._logger = logging.getLogger(self.__class__.__name__)
         self.allow_plain_downloads = args.plain
+        self.magnets_file_path = args.magnetsfile
         self.pending_tasks = {}  # Dictionary of pending tasks
         self.probabilities = []
 
@@ -230,7 +231,7 @@ def exit_script():
         elif action == 'search':
             action = RandomSearchAction()
         elif action == 'start_download':
-            action = StartRandomDownloadAction()
+            action = StartRandomDownloadAction(self.magnets_file_path)
         elif action == 'remove_download':
             action = RemoveRandomDownloadAction()
         elif action == 'explore_download':
