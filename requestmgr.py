@@ -63,3 +63,9 @@ class HTTPRequestManager(object):
         Perform a request to the core to get the CPU usage history
         """
         return http_get("http://localhost:8085/debug/cpu/history")
+
+    def get_state(self):
+        """
+        Get the current state of the Tribler instance
+        """
+        return http_get("http://localhost:8085/state")
