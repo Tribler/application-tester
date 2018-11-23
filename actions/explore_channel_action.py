@@ -22,6 +22,9 @@ class ExploreChannelAction(ActionSequence):
         self.add_action(WaitAction(2500))
 
         # We now click a random torrent to initiate the torrent checker
+        self.add_action(CustomAction("""if window.channel_page_container.items_list.count() == 0:
+    exit_script()
+        """))
         self.add_action(ClickAction('window.channel_page_container.items_list.itemWidget(window.channel_page_container.items_list.item(randint(0, window.channel_page_container.items_list.count() - 1)))'))
         self.add_action(WaitAction(2000))
         self.add_action(ClickAction('window.channel_back_button'))
