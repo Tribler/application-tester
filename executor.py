@@ -70,7 +70,7 @@ class Executor(object):
             # We got an error, check whether it is ConnectionRefused. If so, start Tribler
             if isinstance(failure.value, ConnectionRefusedError):
                 subprocess.Popen("%s --allow-code-injection --testnet" % self.tribler_path, shell=True)
-                reactor.callLater(10, self.open_code_socket)
+                reactor.callLater(20, self.open_code_socket)
 
         self.request_manager.get_state().addCallbacks(on_state, on_error)
 
