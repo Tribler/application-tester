@@ -16,6 +16,7 @@ def start_executor(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run a Tribler application test.')
     parser.add_argument('tribler_executable', metavar='path', type=str, help='the full path to the Tribler executable')
+    parser.add_argument('code_port', metavar='port', type=int, help='the port used to execute code')
     parser.add_argument('-p', '--plain', action='store_true', help='allow plain downloads')
     parser.add_argument('-i', '--ircid', default=None, type=str, help='join IRC with the specified ID')
     parser.add_argument('-d', '--duration', default=None, type=int, help='run the Tribler application tester for a specific period of time')
