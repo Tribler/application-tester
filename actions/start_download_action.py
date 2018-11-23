@@ -22,9 +22,6 @@ class StartDownloadAction(ActionSequence):
         self.add_action(WaitAction(7000))
         self.add_action(ClickAction("window.dialog.dialog_widget.download_button"))
         self.add_action(WaitAction(2000))
-        self.add_action(CustomAction("""if window.dialog:
-    QTest.mouseClick(window.dialog.buttons[0], Qt.LeftButton)
-        """))
 
 
 class StartRandomDownloadAction(StartDownloadAction):
