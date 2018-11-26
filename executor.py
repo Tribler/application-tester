@@ -22,7 +22,6 @@ from actions.explore_download_action import ExploreDownloadAction
 from actions.page_action import RandomPageAction
 from actions.screenshot_action import ScreenshotAction
 from actions.search_action import RandomSearchAction
-from actions.shutdown_action import ShutdownAction, HardShutdownAction
 from actions.start_download_action import StartRandomDownloadAction
 from actions.remove_download_action import RemoveRandomDownloadAction
 from actions.start_vod_action import StartVODAction
@@ -59,6 +58,7 @@ class Executor(object):
         self.tribler_started_checks = 1
         self.tribler_thread = None
         self.tribler_process = None
+        self.shutting_down = False
 
         self.start_tribler()
 
@@ -157,12 +157,21 @@ class Executor(object):
                 self.probabilities.append((parts[0], int(parts[1])))
 
     def stop(self, exit_code):
-        # Stop the execution of random actions and send a message to the IRC
+        """
+        Stop the application. First, shutdown Tribler (gracefully) and then shutdown the application tester.
+        """
+        if self.shutting_down:
+            return
+
+        self.shutting_down = True
+        self._logger.info("About to shutdown Tribler")
         if self.random_action_lc:
             self.random_action_lc.stop()
 
         if sys.platform == "win32":
             os.system("taskkill /im tribler.exe")
+        elif sys.platform == "linux2":
+            os.kill(self.tribler_process.pid, signal.SIGTERM)
         else:
             os.kill(self.tribler_process.pid, signal.SIGINT)
         self.tribler_thread.join()
@@ -189,11 +198,12 @@ class Executor(object):
         """
         Tribler has crashed. Handle the error and shut everything down.
         """
+        self._logger.error("********** TRIBLER CRASHED **********")
         self._logger.error("Tribler crashed after uptime of %s sec! Stack trace: %s", self.uptime, traceback)
         self.tribler_crashed = True
         if self.irc_manager:
             self.irc_manager.irc.send_channel_message("Tribler crashed with stack trace: %s" % traceback)
-        self.stop(1, hard_shutdown=True)
+        self.stop(1)
 
     def weighted_choice(self, choices):
         if len(choices) == 0:
