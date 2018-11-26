@@ -9,6 +9,7 @@ import time
 import sys
 from threading import Thread
 
+import signal
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 from twisted.internet.error import ConnectionRefusedError
@@ -54,6 +55,8 @@ class Executor(object):
         self.download_monitor = None
         self.resource_monitor = None
         self.random_action_lc = None
+        self.tribler_thread = None
+        self.tribler_process = None
 
         self.start_tribler()
 
@@ -74,13 +77,13 @@ class Executor(object):
             if isinstance(failure.value, ConnectionRefusedError):
 
                 def tribler_thread():
-                    p = subprocess.Popen("%s --allow-code-injection --testnet" % self.tribler_path, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    p.communicate()
+                    self.tribler_process = subprocess.Popen("%s --allow-code-injection --testnet" % self.tribler_path, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    self.tribler_process.communicate()
 
                 self._logger.info("Tribler not running - starting it")
-                tribler_thread = Thread(target=tribler_thread)
-                tribler_thread.setDaemon(True)
-                tribler_thread.start()
+                self.tribler_thread = Thread(target=tribler_thread)
+                self.tribler_thread.setDaemon(True)
+                self.tribler_thread.start()
 
                 reactor.callLater(20, self.open_code_socket)
 
@@ -111,6 +114,12 @@ class Executor(object):
 
     def on_socket_failed(self, failure):
         self._logger.error("Tribler code socket connection failed: %s", failure)
+        if sys.platform == "win32":
+            os.system("taskkill /im tribler.exe")
+        else:
+            os.kill(self.tribler_process.pid, signal.SIGKILL)
+        self.tribler_thread.join()
+        self._logger.info("Stopped Tribler, shutting down")
         self.shutdown_tester(1)
 
     def determine_probabilities(self):
