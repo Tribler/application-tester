@@ -115,7 +115,8 @@ class Executor(object):
 
     def stop(self, exit_code, hard_shutdown=False):
         # Stop the execution of random actions and send a message to the IRC
-        self.random_action_lc.stop()
+        if self.random_action_lc:
+            self.random_action_lc.stop()
 
         def on_tribler_shutdown(_):
             reactor.stop()
