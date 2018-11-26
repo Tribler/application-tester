@@ -109,6 +109,10 @@ class Executor(object):
             self.resource_monitor = ResourceMonitor(self.args.monitorresources)
             reactor.callLater(20, self.resource_monitor.start)
 
+    def on_socket_failed(self, failure):
+        self._logger.error("Tribler code socket connection failed: %s", failure)
+        self.shutdown_tester(1)
+
     def determine_probabilities(self):
         with open(os.path.join(os.getcwd(), "data", "action_weights.txt"), "r") as action_weights_file:
             content = action_weights_file.read()
@@ -131,18 +135,21 @@ class Executor(object):
             self.random_action_lc.stop()
 
         def on_tribler_shutdown(_):
-            reactor.stop()
-            try:
-                sys.exit(exit_code)
-            except SystemExit:
-                pass
+            self.shutdown_tester(exit_code)
 
         def shutdown_tribler():
             shutdown_action = ShutdownAction() if not hard_shutdown else HardShutdownAction()
             self.execute_action(shutdown_action).addCallback(on_tribler_shutdown)
-            reactor.callLater(5, on_tribler_shutdown, None)  # Give it 20 seconds to shutdown
+            reactor.callLater(20, on_tribler_shutdown, None)  # Give it 20 seconds to shutdown
 
-        reactor.callLater(10, shutdown_tribler)
+        reactor.callLater(5, shutdown_tribler)
+
+    def shutdown_tester(self, exit_code):
+        reactor.stop()
+        try:
+            sys.exit(exit_code)
+        except SystemExit:
+            pass
 
     @property
     def uptime(self):

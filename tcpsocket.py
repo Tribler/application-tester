@@ -2,6 +2,7 @@ import logging
 
 from twisted.internet import protocol
 from twisted.internet.defer import Deferred
+from twisted.python.failure import Failure
 
 
 class TriblerCodeClient(protocol.Protocol):
@@ -52,10 +53,11 @@ class TriblerCodeClientFactory(protocol.ClientFactory):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.executor = executor
         self.connect_deferred = Deferred()
-        self.connect_deferred.addCallback(self.executor.on_socket_ready)
+        self.connect_deferred.addCallbacks(self.executor.on_socket_ready, self.executor.on_socket_failed)
 
     def clientConnectionFailed(self, connector, reason):
         self._logger.warning("Tribler code socket connection failed: %s", reason)
+        self.connect_deferred.errback(Failure(RuntimeError("Failed to connect to Tribler socket!")))
 
     def clientConnectionLost(self, connector, reason):
         self._logger.warning("Tribler code socket connection lost: %s", reason)
