@@ -1,7 +1,8 @@
 import json
 
 from twisted.internet import reactor
-from twisted.internet.defer import fail
+from twisted.internet.defer import fail, Deferred
+from twisted.internet.error import ConnectionRefusedError
 from twisted.web import http
 from twisted.web.client import readBody, Agent
 from twisted.web.http_headers import Headers
@@ -69,3 +70,19 @@ class HTTPRequestManager(object):
         Get the current state of the Tribler instance
         """
         return http_get("http://localhost:8085/state")
+
+    def is_tribler_started(self):
+        """
+        Return whether Tribler has started or not
+        """
+        started_deferred = Deferred()
+
+        def on_response(response):
+            json_response = json.loads(response)
+            started_deferred.callback(json_response['state'] == 'STARTED')
+
+        def on_error(_):
+            started_deferred.callback(False)
+
+        self.get_state().addCallbacks(on_response, on_error)
+        return started_deferred

@@ -55,6 +55,8 @@ class Executor(object):
         self.download_monitor = None
         self.resource_monitor = None
         self.random_action_lc = None
+        self.tribler_started_lc = None
+        self.tribler_started_checks = 1
         self.tribler_thread = None
         self.tribler_process = None
 
@@ -63,9 +65,9 @@ class Executor(object):
         if args.duration:
             reactor.callLater(args.duration, self.stop, 0)
 
-    def start_tribler(self):
+    def check_tribler(self):
         """
-        Start Tribler if it has not been started yet.
+        Check the state of Tribler.
         """
         def on_state(_):
             # It seems Tribler is already running; open the socket
@@ -75,21 +77,43 @@ class Executor(object):
         def on_error(failure):
             # We got an error, check whether it is ConnectionRefused. If so, start Tribler
             if isinstance(failure.value, ConnectionRefusedError):
-
-                def tribler_thread():
-                    self.tribler_process = subprocess.Popen("%s --allow-code-injection --testnet" % self.tribler_path, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    self.tribler_process.communicate()
-
-                self._logger.info("Tribler not running - starting it")
-                self.tribler_thread = Thread(target=tribler_thread)
-                self.tribler_thread.setDaemon(True)
-                self.tribler_thread.start()
-
-                reactor.callLater(20, self.open_code_socket)
+                self.start_tribler()
 
         self.request_manager.get_state().addCallbacks(on_state, on_error)
 
+    def start_tribler(self):
+        """
+        Start Tribler if it has not been started yet.
+        """
+        def tribler_thread():
+            self.tribler_process = subprocess.Popen("%s --allow-code-injection --testnet" % self.tribler_path,
+                                                    shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self.tribler_process.communicate()
+
+        self._logger.info("Tribler not running - starting it")
+        self.tribler_thread = Thread(target=tribler_thread)
+        self.tribler_thread.setDaemon(True)
+        self.tribler_thread.start()
+
+        reactor.callLater(5, self.check_tribler_started)
+
+    def check_tribler_started(self):
+        self._logger.info("Checking whether Tribler has started (%d/10)", self.tribler_started_checks)
+
+        def on_response(started):
+            if started:
+                self.open_code_socket()
+            elif self.tribler_started_checks == 10:
+                self._logger.error("Tribler did not seem to start within reasonable time, bailing out")
+                self.shutdown_tester(1)
+            else:
+                self.tribler_started_checks += 1
+                reactor.callLater(5, self.check_tribler_started)
+
+        return self.request_manager.is_tribler_started().addCallback(on_response)
+
     def open_code_socket(self):
+        self._logger.info("Opening Tribler code socket connection")
         reactor.connectTCP("localhost", 5500, self.socket_factory)
 
     def on_socket_ready(self, socket):
@@ -114,13 +138,7 @@ class Executor(object):
 
     def on_socket_failed(self, failure):
         self._logger.error("Tribler code socket connection failed: %s", failure)
-        if sys.platform == "win32":
-            os.system("taskkill /im tribler.exe")
-        else:
-            os.kill(self.tribler_process.pid, signal.SIGKILL)
-        self.tribler_thread.join()
-        self._logger.info("Stopped Tribler, shutting down")
-        self.shutdown_tester(1)
+        self.stop(1)
 
     def determine_probabilities(self):
         with open(os.path.join(os.getcwd(), "data", "action_weights.txt"), "r") as action_weights_file:
@@ -138,27 +156,22 @@ class Executor(object):
 
                 self.probabilities.append((parts[0], int(parts[1])))
 
-    def stop(self, exit_code, hard_shutdown=False):
+    def stop(self, exit_code):
         # Stop the execution of random actions and send a message to the IRC
         if self.random_action_lc:
             self.random_action_lc.stop()
 
-        def on_tribler_shutdown(_):
-            self.shutdown_tester(exit_code)
-
-        def shutdown_tribler():
-            shutdown_action = ShutdownAction() if not hard_shutdown else HardShutdownAction()
-            self.execute_action(shutdown_action).addCallback(on_tribler_shutdown)
-            reactor.callLater(20, on_tribler_shutdown, None)  # Give it 20 seconds to shutdown
-
-        reactor.callLater(5, shutdown_tribler)
+        if sys.platform == "win32":
+            os.system("taskkill /im tribler.exe")
+        else:
+            os.kill(self.tribler_process.pid, signal.SIGINT)
+        self.tribler_thread.join()
+        self._logger.info("Stopped Tribler, shutting down")
+        self.shutdown_tester(exit_code)
 
     def shutdown_tester(self, exit_code):
+        reactor.addSystemEventTrigger('after', 'shutdown', os._exit, exit_code)
         reactor.stop()
-        try:
-            sys.exit(exit_code)
-        except SystemExit:
-            pass
 
     @property
     def uptime(self):
