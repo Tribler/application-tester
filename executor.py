@@ -7,6 +7,8 @@ from random import random, randint, choice
 import time
 
 import sys
+from threading import Thread
+
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 from twisted.internet.error import ConnectionRefusedError
@@ -64,12 +66,22 @@ class Executor(object):
         """
         def on_state(_):
             # It seems Tribler is already running; open the socket
+            self._logger.info("Tribler already running - opening socket")
             self.open_code_socket()
 
         def on_error(failure):
             # We got an error, check whether it is ConnectionRefused. If so, start Tribler
             if isinstance(failure.value, ConnectionRefusedError):
-                subprocess.Popen("%s --allow-code-injection --testnet" % self.tribler_path, shell=True)
+
+                def tribler_thread():
+                    p = subprocess.Popen("%s --allow-code-injection --testnet" % self.tribler_path, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    p.communicate()
+
+                self._logger.info("Tribler not running - starting it")
+                tribler_thread = Thread(target=tribler_thread)
+                tribler_thread.setDaemon(True)
+                tribler_thread.start()
+
                 reactor.callLater(20, self.open_code_socket)
 
         self.request_manager.get_state().addCallbacks(on_state, on_error)
