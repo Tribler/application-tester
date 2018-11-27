@@ -86,3 +86,18 @@ class HTTPRequestManager(object):
 
         self.get_state().addCallbacks(on_response, on_error)
         return started_deferred
+
+    def is_tribler_stopped(self):
+        """
+        Return whether Tribler has started or not
+        """
+        stopped_deferred = Deferred()
+
+        def on_response(_):
+            stopped_deferred.callback(False)
+
+        def on_error(_):
+            stopped_deferred.callback(True)
+
+        self.get_state().addCallbacks(on_response, on_error)
+        return stopped_deferred
