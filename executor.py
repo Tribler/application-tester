@@ -22,6 +22,7 @@ from actions.explore_download_action import ExploreDownloadAction
 from actions.page_action import RandomPageAction
 from actions.screenshot_action import ScreenshotAction
 from actions.search_action import RandomSearchAction
+from actions.shutdown_action import ShutdownAction
 from actions.start_download_action import StartRandomDownloadAction
 from actions.remove_download_action import RemoveRandomDownloadAction
 from actions.start_vod_action import StartVODAction
@@ -168,15 +169,16 @@ class Executor(object):
         if self.random_action_lc:
             self.random_action_lc.stop()
 
-        if sys.platform == "win32":
-            os.system("taskkill /im tribler.exe")
-        elif sys.platform == "linux2":
-            os.kill(self.tribler_process.pid, signal.SIGTERM)
+        if not self.code_socket:
+            if sys.platform == "win32":
+                os.system("taskkill /im tribler.exe")
+            else:
+                os.kill(self.tribler_process.pid, signal.SIGTERM)
+            self.tribler_thread.join()
+            self._logger.info("Stopped Tribler, shutting down")
+            self.shutdown_tester(exit_code)
         else:
-            os.kill(self.tribler_process.pid, signal.SIGINT)
-        self.tribler_thread.join()
-        self._logger.info("Stopped Tribler, shutting down")
-        self.shutdown_tester(exit_code)
+            self.execute_action(ShutdownAction()).addCallback(lambda _: self.shutdown_tester(exit_code))
 
     def shutdown_tester(self, exit_code):
         reactor.addSystemEventTrigger('after', 'shutdown', os._exit, exit_code)
