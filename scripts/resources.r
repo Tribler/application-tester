@@ -1,3 +1,8 @@
+is.installed <- function(mypkg) is.element(mypkg, installed.packages()[,1])
+if (is.installed("ggplot2") == FALSE){
+    install.packages("ggplot2", repos = "http://cran.r-project.org")
+}
+
 library(ggplot2)
 
 if(file.exists("output/cpu_stats.csv")){
