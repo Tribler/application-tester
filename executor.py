@@ -88,7 +88,7 @@ class Executor(object):
         """
         def tribler_thread():
             self.tribler_process = subprocess.Popen("%s --allow-code-injection --testnet" % self.tribler_path,
-                                                    shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                                    shell=True)
             self.tribler_process.communicate()
 
         self._logger.info("Tribler not running - starting it")
