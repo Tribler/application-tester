@@ -42,6 +42,18 @@ class ResourceMonitor(object):
         self.monitor_memory_lc.start(self.interval)
         self.monitor_cpu_lc.start(self.interval)
 
+    def stop(self):
+        """
+        Stop the monitoring loop for the resources.
+        """
+        if self.monitor_memory_lc and self.monitor_memory_lc.running:
+            self.monitor_memory_lc.stop()
+            self.monitor_memory_lc = None
+
+        if self.monitor_cpu_lc and self.monitor_cpu_lc.running:
+            self.monitor_cpu_lc.stop()
+            self.monitor_cpu_lc = None
+
     def on_memory_history(self, response):
         history = json.loads(response)
         for history_item in history["memory_history"]:

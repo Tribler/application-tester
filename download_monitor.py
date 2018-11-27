@@ -34,6 +34,14 @@ class DownloadMonitor(object):
         """
         self.monitor_lc.start(self.interval)
 
+    def stop(self):
+        """
+        Stop the monitoring loop for the downloads.
+        """
+        if self.monitor_lc and self.monitor_lc.running:
+            self.monitor_lc.stop()
+            self.monitor_lc = None
+
     def on_downloads(self, response):
         downloads = json.loads(response)
         for download in downloads["downloads"]:
