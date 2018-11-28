@@ -158,10 +158,13 @@ class Executor(object):
         self._logger.info("About to shutdown Tribler")
         if self.download_monitor:
             self.download_monitor.stop()
+            self.download_monitor = None
         if self.resource_monitor:
             self.resource_monitor.stop()
+            self.resource_monitor = None
         if self.random_action_lc:
             self.random_action_lc.stop()
+            self.random_action_lc = None
 
         if self.code_socket:
             self.execute_action(ShutdownAction())
