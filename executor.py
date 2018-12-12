@@ -3,12 +3,12 @@ import os
 import subprocess
 from bisect import bisect
 from random import random, randint, choice
-
+import sys
 import time
 
-import sys
+import signal
 from twisted.internet import reactor
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, inlineCallbacks
 from twisted.internet.error import ConnectionRefusedError
 from twisted.internet.task import LoopingCall
 
@@ -19,7 +19,7 @@ from actions.explore_download_action import ExploreDownloadAction
 from actions.page_action import RandomPageAction
 from actions.screenshot_action import ScreenshotAction
 from actions.search_action import RandomSearchAction
-from actions.shutdown_action import ShutdownAction, HardShutdownAction
+from actions.shutdown_action import ShutdownAction
 from actions.start_download_action import StartRandomDownloadAction
 from actions.remove_download_action import RemoveRandomDownloadAction
 from actions.start_vod_action import StartVODAction
@@ -52,29 +52,59 @@ class Executor(object):
         self.download_monitor = None
         self.resource_monitor = None
         self.random_action_lc = None
+        self.tribler_started_lc = None
+        self.tribler_started_checks = 1
+        self.tribler_stopped_lc = None
+        self.tribler_stopped_checks = 1
+        self.tribler_process = None
+        self.shutting_down = False
 
         self.start_tribler()
 
         if args.duration:
             reactor.callLater(args.duration, self.stop, 0)
 
-    def start_tribler(self):
+    def check_tribler(self):
         """
-        Start Tribler if it has not been started yet.
+        Check the state of Tribler.
         """
         def on_state(_):
             # It seems Tribler is already running; open the socket
+            self._logger.info("Tribler already running - opening socket")
             self.open_code_socket()
 
         def on_error(failure):
             # We got an error, check whether it is ConnectionRefused. If so, start Tribler
             if isinstance(failure.value, ConnectionRefusedError):
-                subprocess.Popen("%s --allow-code-injection --testnet" % self.tribler_path, shell=True)
-                reactor.callLater(20, self.open_code_socket)
+                self.start_tribler()
 
         self.request_manager.get_state().addCallbacks(on_state, on_error)
 
+    def start_tribler(self):
+        """
+        Start Tribler if it has not been started yet.
+        """
+        self._logger.info("Tribler not running - starting it")
+        self.tribler_process = subprocess.Popen("%s --allow-code-injection --testnet" % self.tribler_path, shell=True)
+        reactor.callLater(5, self.check_tribler_started)
+
+    def check_tribler_started(self):
+        self._logger.info("Checking whether Tribler has started (%d/10)", self.tribler_started_checks)
+
+        def on_response(started):
+            if started:
+                self.open_code_socket()
+            elif self.tribler_started_checks == 10:
+                self._logger.error("Tribler did not seem to start within reasonable time, bailing out")
+                self.shutdown_tester(1)
+            else:
+                self.tribler_started_checks += 1
+                reactor.callLater(5, self.check_tribler_started)
+
+        return self.request_manager.is_tribler_started().addCallback(on_response)
+
     def open_code_socket(self):
+        self._logger.info("Opening Tribler code socket connection")
         reactor.connectTCP("localhost", 5500, self.socket_factory)
 
     def on_socket_ready(self, socket):
@@ -97,6 +127,10 @@ class Executor(object):
             self.resource_monitor = ResourceMonitor(self.args.monitorresources)
             reactor.callLater(20, self.resource_monitor.start)
 
+    def on_socket_failed(self, failure):
+        self._logger.error("Tribler code socket connection failed: %s", failure)
+        self.stop(1)
+
     def determine_probabilities(self):
         with open(os.path.join(os.getcwd(), "data", "action_weights.txt"), "r") as action_weights_file:
             content = action_weights_file.read()
@@ -113,23 +147,61 @@ class Executor(object):
 
                 self.probabilities.append((parts[0], int(parts[1])))
 
-    def stop(self, exit_code, hard_shutdown=False):
-        # Stop the execution of random actions and send a message to the IRC
-        self.random_action_lc.stop()
+    def stop(self, exit_code):
+        """
+        Stop the application. First, shutdown Tribler (gracefully) and then shutdown the application tester.
+        """
+        if self.shutting_down:
+            return
 
-        def on_tribler_shutdown(_):
-            reactor.stop()
-            try:
-                sys.exit(exit_code)
-            except SystemExit:
-                pass
+        self.shutting_down = True
+        self._logger.info("About to shutdown Tribler")
+        if self.download_monitor:
+            self.download_monitor.stop()
+            self.download_monitor = None
+        if self.resource_monitor:
+            self.resource_monitor.stop()
+            self.resource_monitor = None
+        if self.random_action_lc:
+            self.random_action_lc.stop()
+            self.random_action_lc = None
 
-        def shutdown_tribler():
-            shutdown_action = ShutdownAction() if not hard_shutdown else HardShutdownAction()
-            self.execute_action(shutdown_action).addCallback(on_tribler_shutdown)
-            reactor.callLater(5, on_tribler_shutdown, None)  # Give it 20 seconds to shutdown
+        if self.code_socket:
+            self.execute_action(ShutdownAction())
 
-        reactor.callLater(10, shutdown_tribler)
+        if sys.platform == "win32":
+            os.system("taskkill /im tribler.exe")
+        elif sys.platform == "darwin":
+            os.kill(self.tribler_process.pid, signal.SIGINT)
+        else:
+            os.kill(self.tribler_process.pid, signal.SIGTERM)
+
+        reactor.callLater(5, self.check_tribler_shutdown, exit_code)
+
+    @inlineCallbacks
+    def check_tribler_shutdown(self, exit_code):
+        tribler_stopped = yield self.request_manager.is_tribler_stopped()
+        if tribler_stopped:
+            self.on_tribler_shutdown(exit_code)
+        elif self.tribler_stopped_checks == 10:
+            self._logger.warning("Tribler did not shutdown in reasonable time; force kill it")
+            if sys.platform == "win32":
+                os.system("taskkill /im tribler.exe /f")
+            else:
+                os.kill(self.tribler_process.pid, signal.SIGKILL)
+            self.on_tribler_shutdown(exit_code)
+        else:
+            # Still alive, schedule next check
+            self.tribler_stopped_checks += 1
+            reactor.callLater(5, self.check_tribler_shutdown, exit_code)
+
+    def on_tribler_shutdown(self, exit_code):
+        self._logger.info("Stopped Tribler, shutting down")
+        self.shutdown_tester(exit_code)
+
+    def shutdown_tester(self, exit_code):
+        reactor.addSystemEventTrigger('after', 'shutdown', os._exit, exit_code)
+        reactor.stop()
 
     @property
     def uptime(self):
@@ -147,11 +219,12 @@ class Executor(object):
         """
         Tribler has crashed. Handle the error and shut everything down.
         """
+        self._logger.error("********** TRIBLER CRASHED **********")
         self._logger.error("Tribler crashed after uptime of %s sec! Stack trace: %s", self.uptime, traceback)
         self.tribler_crashed = True
         if self.irc_manager:
             self.irc_manager.irc.send_channel_message("Tribler crashed with stack trace: %s" % traceback)
-        self.stop(1, hard_shutdown=True)
+        self.stop(1)
 
     def weighted_choice(self, choices):
         if len(choices) == 0:
