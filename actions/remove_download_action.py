@@ -22,6 +22,9 @@ class RemoveRandomDownloadAction(ActionSequence):
         self.add_action(WaitAction(1000))
         self.add_action(ClickAction('window.remove_download_button'))
         self.add_action(WaitAction(1000))
+        self.add_action(CustomAction("""if not window.downloads_page.dialog:
+    exit_script()
+        """))
         self.add_action(ClickAction('window.downloads_page.dialog.buttons[1]'))
         self.add_action(WaitAction(1000))
 
