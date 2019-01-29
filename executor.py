@@ -25,11 +25,11 @@ from actions.remove_download_action import RemoveRandomDownloadAction
 from actions.start_vod_action import StartVODAction
 from actions.subscribe_unsubscribe_action import SubscribeUnsubscribeAction
 from actions.wait_action import WaitAction
-from download_monitor import DownloadMonitor
-from ipv8_monitor import IPv8Monitor
+from monitors.download_monitor import DownloadMonitor
+from monitors.ipv8_monitor import IPv8Monitor
 from ircclient import IRCManager
 from requestmgr import HTTPRequestManager
-from resource_monitor import ResourceMonitor
+from monitors.resource_monitor import ResourceMonitor
 from tcpsocket import TriblerCodeClientFactory
 
 
