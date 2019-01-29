@@ -9,3 +9,4 @@ start_vod=5
 change_anonymity=5
 subscribe_unsubscribe=10
 screenshot=5
+change_download_files=10
