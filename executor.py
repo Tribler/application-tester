@@ -14,6 +14,7 @@ from twisted.internet.task import LoopingCall
 
 from actions.browse_discovered_action import BrowseDiscoveredAction
 from actions.change_anonymity_action import ChangeAnonymityAction
+from actions.change_download_files_action import ChangeDownloadFilesAction
 from actions.explore_channel_action import ExploreChannelAction
 from actions.explore_download_action import ExploreDownloadAction
 from actions.page_action import RandomPageAction
@@ -310,5 +311,7 @@ def exit_script():
             action = ChangeAnonymityAction(allow_plain=self.allow_plain_downloads)
         elif action == 'subscribe_unsubscribe':
             action = SubscribeUnsubscribeAction()
+        elif action == 'change_download_files':
+            action = ChangeDownloadFilesAction()
 
         self.execute_action(action)
