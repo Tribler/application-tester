@@ -9,7 +9,7 @@ from requestmgr import HTTPRequestManager
 
 class DownloadMonitor(object):
     """
-    This class is responsible for monitoring downloads in Tribler.
+    This class is responsible for monitoring downloads and circuits in Tribler.
     Specifically, it fetches information from the Tribler core and writes it to a file.
     """
 
@@ -27,6 +27,10 @@ class DownloadMonitor(object):
         self.download_stats_file_path = os.path.join(output_dir, 'download_stats.csv')
         with open(self.download_stats_file_path, "w") as output_file:
             output_file.write("time,infohash,status,speed_up,speed_down,progress\n")
+
+        self.circuits_stats_file_path = os.path.join(output_dir, 'circuit_stats.csv')
+        with open(self.circuits_stats_file_path, "w") as output_file:
+            output_file.write("time,num_circuits\n")
 
     def start(self):
         """
@@ -53,6 +57,15 @@ class DownloadMonitor(object):
                                                            download["speed_up"],
                                                            download["speed_down"],
                                                            download["progress"]))
+
+        # Now we get the number of circuits
+        return self.request_manager.get_circuits_info().addCallback(self.on_circuits_info)
+
+    def on_circuits_info(self, response):
+        circuits_info = json.loads(response)
+        with open(self.circuits_stats_file_path, "a") as output_file:
+            time_diff = time.time() - self.start_time
+            output_file.write("%s,%d\n" % (time_diff, len(circuits_info['circuits'])))
 
     def monitor_downloads(self):
         """
