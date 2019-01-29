@@ -53,6 +53,12 @@ class HTTPRequestManager(object):
         """
         return http_get("http://localhost:8085/downloads")
 
+    def get_overlay_statistics(self):
+        """
+        Perform a request to the core to get IPv8 overlay statistics
+        """
+        return http_get("http://localhost:8085/statistics/communities")
+
     def get_memory_history_core(self):
         """
         Perform a request to the core to get the memory usage history
