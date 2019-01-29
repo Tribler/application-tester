@@ -26,6 +26,7 @@ from actions.start_vod_action import StartVODAction
 from actions.subscribe_unsubscribe_action import SubscribeUnsubscribeAction
 from actions.wait_action import WaitAction
 from download_monitor import DownloadMonitor
+from ipv8_monitor import IPv8Monitor
 from ircclient import IRCManager
 from requestmgr import HTTPRequestManager
 from resource_monitor import ResourceMonitor
@@ -51,6 +52,7 @@ class Executor(object):
         self.tribler_crashed = False
         self.download_monitor = None
         self.resource_monitor = None
+        self.ipv8_monitor = None
         self.random_action_lc = None
         self.tribler_started_lc = None
         self.tribler_started_checks = 1
@@ -121,11 +123,15 @@ class Executor(object):
 
         if self.args.monitordownloads:
             self.download_monitor = DownloadMonitor(self.args.monitordownloads)
-            reactor.callLater(20, self.download_monitor.start)
+            reactor.callLater(18, self.download_monitor.start)
 
         if self.args.monitorresources:
             self.resource_monitor = ResourceMonitor(self.args.monitorresources)
             reactor.callLater(20, self.resource_monitor.start)
+
+        if self.args.monitoripv8:
+            self.ipv8_monitor = IPv8Monitor(self.args.monitoripv8)
+            reactor.callLater(20, self.ipv8_monitor.start)
 
     def on_socket_failed(self, failure):
         self._logger.error("Tribler code socket connection failed: %s", failure)
