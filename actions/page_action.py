@@ -29,6 +29,5 @@ class RandomPageAction(PageAction):
     """
 
     def __init__(self):
-        rand_page = 'settings'
-        #rand_page = choice(self.BUTTONS_TO_PAGES.keys())
+        rand_page = choice(self.BUTTONS_TO_PAGES.keys())
         super(RandomPageAction, self).__init__(rand_page)
