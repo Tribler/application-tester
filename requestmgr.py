@@ -57,7 +57,7 @@ class HTTPRequestManager(object):
         """
         Perform a request to the core to get circuits information
         """
-        return http_get("http://localhost:8085/debug/circuits")
+        return http_get("http://localhost:8085/ipv8/tunnel/circuits")
 
     def get_overlay_statistics(self):
         """
