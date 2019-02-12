@@ -36,15 +36,3 @@ if(file.exists("output/download_stats.csv")){
 
     ggsave(file="output/progress.png", width=8, height=6, dpi=100)
 }
-
-if(file.exists("output/circuit_stats.csv")){
-	df <- read.csv("output/circuit_stats.csv", sep=",", header=T)
-
-	# Number of circuits
-    p <- ggplot(df) + theme_bw()
-    p <- p + geom_line(aes(x=time, y=num_circuits))
-    p <- p + theme(legend.position="bottom", legend.direction="horizontal") + xlab("Time into experiment (sec)") + ylab("Total number of circuits") + ggtitle("Number of circuits")
-    p
-
-    ggsave(file="output/circuits.png", width=8, height=6, dpi=100)
-}

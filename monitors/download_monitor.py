@@ -28,9 +28,17 @@ class DownloadMonitor(object):
         with open(self.download_stats_file_path, "w") as output_file:
             output_file.write("time,infohash,status,speed_up,speed_down,progress\n")
 
-        self.circuits_stats_file_path = os.path.join(output_dir, 'circuit_stats.csv')
-        with open(self.circuits_stats_file_path, "w") as output_file:
-            output_file.write("time,num_circuits\n")
+        self.circuits_file_path = os.path.join(output_dir, 'circuits.csv')
+        with open(self.circuits_file_path, "w") as output_file:
+            output_file.write("time,id,type,state,goal_hops,actual_hops,bytes_up,bytes_down\n")
+
+        self.circuits_states_file_path = os.path.join(output_dir, 'circuit_states.csv')
+        with open(self.circuits_states_file_path, "w") as output_file:
+            output_file.write("time,ready,extending,closing\n")
+
+        self.circuits_types_file_path = os.path.join(output_dir, 'circuit_types.csv')
+        with open(self.circuits_types_file_path, "w") as output_file:
+            output_file.write("time,data,ip,rp,rendezvous\n")
 
     def start(self):
         """
@@ -63,9 +71,49 @@ class DownloadMonitor(object):
 
     def on_circuits_info(self, response):
         circuits_info = json.loads(response)
-        with open(self.circuits_stats_file_path, "a") as output_file:
-            time_diff = time.time() - self.start_time
-            output_file.write("%s,%d\n" % (time_diff, len(circuits_info['circuits'])))
+        time_diff = time.time() - self.start_time
+        circuits_ready = circuits_extending = circuits_closing = 0
+        circuits_data = circuits_ip = circuits_rp = circuits_rendezvous = 0
+
+        for circuit in circuits_info["circuits"]:
+            if circuit["state"] == "READY":
+                circuits_ready += 1
+            elif circuit["state"] == "EXTENDING":
+                circuits_extending += 1
+            elif circuit["state"] == "CLOSING":
+                circuits_closing += 1
+
+            if circuit["type"] == "DATA":
+                circuits_data += 1
+            elif circuit["type"] == "IP":
+                circuits_ip += 1
+            elif circuit["type"] == "RP":
+                circuits_rp += 1
+            elif circuit["type"] == "RENDEZVOUS":
+                circuits_rendezvous += 1
+
+            with open(self.circuits_file_path, "a") as output_file:
+                output_file.write("%s,%s,%s,%s,%d,%d,%d,%d\n" % (time_diff,
+                                                                 circuit["circuit_id"],
+                                                                 circuit["type"],
+                                                                 circuit["state"],
+                                                                 circuit["goal_hops"],
+                                                                 circuit["actual_hops"],
+                                                                 circuit["bytes_up"],
+                                                                 circuit["bytes_down"]))
+
+        with open(self.circuits_states_file_path, "a") as output_file:
+            output_file.write("%s,%d,%d,%d\n" % (time_diff,
+                                                 circuits_ready,
+                                                 circuits_extending,
+                                                 circuits_closing))
+
+        with open(self.circuits_types_file_path, "a") as output_file:
+            output_file.write("%s,%d,%d,%d,%d\n" % (time_diff,
+                                                    circuits_data,
+                                                    circuits_ip,
+                                                    circuits_rp,
+                                                    circuits_rendezvous))
 
     def monitor_downloads(self):
         """
