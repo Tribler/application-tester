@@ -44,10 +44,10 @@ class IPv8Monitor(object):
 
     def on_overlay_statistics(self, response):
         statistics = json.loads(response)
-        if 'ipv8_overlay_statistics' not in statistics:
+        if 'overlays' not in statistics:
             return
 
-        for overlay in statistics["ipv8_overlay_statistics"]:
+        for overlay in statistics["overlays"]:
             with open(self.overlay_stats_file_path, "a") as output_file:
                 time_diff = time.time() - self.start_time
                 output_file.write("%s,%s,%d\n" % (time_diff, overlay['master_peer'][-6:], len(overlay['peers'])))
