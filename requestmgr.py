@@ -63,7 +63,7 @@ class HTTPRequestManager(object):
         """
         Perform a request to the core to get IPv8 overlay statistics
         """
-        return http_get("http://localhost:8085/statistics/communities")
+        return http_get("http://localhost:8085/ipv8/overlays")
 
     def get_memory_history_core(self):
         """
