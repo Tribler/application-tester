@@ -13,6 +13,6 @@ class BrowseDiscoveredAction(ActionSequence):
         super(BrowseDiscoveredAction, self).__init__()
 
         self.add_action(PageAction('discovered'))
-        for _ in xrange(0, 10):
+        for _ in range(0, 10):
             self.add_action(RandomScrollAction("window.discovered_channels_list"))
             self.add_action(WaitAction(300))

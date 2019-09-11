@@ -10,10 +10,10 @@ class Bot(irc.IRCClient):
 
     def signedOn(self):
         self.join(self.factory.channel)
-        print "Signed on as %s." % self.nickname
+        print("Signed on as %s.", self.nickname)
 
     def joined(self, channel):
-        print "Joined %s." % channel
+        print("Joined %s.", channel)
 
     def privmsg(self, user, channel, message):
         if message.startswith("!"):
@@ -54,11 +54,11 @@ class BotFactory(protocol.ClientFactory):
         return self.bot
 
     def clientConnectionLost(self, connector, reason):
-        print "Connection lost. Reason: %s" % reason
+        print("Connection lost. Reason: %s", reason)
         connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
-        print "Connection failed. Reason: %s" % reason
+        print("Connection failed. Reason: %s", reason)
 
     def send_channel_message(self, message):
         self.bot.msg(self.channel, message)

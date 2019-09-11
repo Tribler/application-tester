@@ -1,4 +1,5 @@
 import logging
+from base64 import b64decode
 
 from twisted.internet import protocol
 from twisted.internet.defer import Deferred
@@ -8,7 +9,7 @@ from twisted.python.failure import Failure
 class TriblerCodeClient(protocol.Protocol):
 
     def __init__(self):
-        self.buffer = ''
+        self.buffer = b''
 
     def connectionMade(self):
         self.factory.connect_deferred.callback(self)
@@ -17,9 +18,9 @@ class TriblerCodeClient(protocol.Protocol):
         """
         We received some data from Tribler. Parse it and handle it.
         """
-        self.buffer = ''
-        for line in data.split('\n'):
-            if not line.startswith('result') and not line.startswith('crash'):
+        self.buffer = b''
+        for line in data.split(b'\n'):
+            if not line.startswith(b'result') and not line.startswith(b'crash'):
                 self.buffer += line
             else:
                 self.process_response(self.buffer)
@@ -28,22 +29,22 @@ class TriblerCodeClient(protocol.Protocol):
         self.process_response(self.buffer)
 
     def process_response(self, data):
-        if data.startswith('result'):
-            parts = data.split(' ')
+        if data.startswith(b'result'):
+            parts = data.split(b' ')
             if len(parts) != 3:
                 return
-            result_value = parts[1].decode('base64')
+            result_value = b64decode(parts[1])
             task_id = parts[2]
             self.factory.executor.on_task_result(task_id, result_value)
-        elif data.startswith('crash'):
-            parts = data.split(' ')
+        elif data.startswith(b'crash'):
+            parts = data.split(b' ')
             if len(parts) != 2:
                 return
-            traceback = parts[1].decode('base64')
+            traceback = b64decode(parts[1])
             self.factory.executor.on_tribler_crash(traceback)
 
     def run_code(self, code, task_id):
-        self.transport.write("%s %s\n" % (code, task_id))
+        self.transport.write(b"%s %s\n" % (code, task_id))
 
 
 class TriblerCodeClientFactory(protocol.ClientFactory):
