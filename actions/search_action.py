@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from random import choice
 
 from action_sequence import ActionSequence

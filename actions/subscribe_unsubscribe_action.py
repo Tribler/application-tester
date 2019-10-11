@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from action_sequence import ActionSequence
 from actions.custom_action import CustomAction
 from actions.page_action import PageAction
