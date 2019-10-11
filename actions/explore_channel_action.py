@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from action_sequence import ActionSequence
 from actions.click_action import ClickAction, TableViewClickAction, RandomTableViewClickAction
 from actions.custom_action import CustomAction

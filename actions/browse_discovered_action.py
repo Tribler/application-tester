@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+
+from six.moves import xrange
+
 from action_sequence import ActionSequence
 from actions.page_action import PageAction
 from actions.scroll_action import RandomScrollAction
