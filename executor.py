@@ -1,6 +1,7 @@
 import logging
 import os
 import subprocess
+from base64 import b64encode
 from bisect import bisect
 from random import random, randint, choice
 import sys
@@ -255,7 +256,7 @@ class Executor(object):
         """
         self._logger.info("Executing action: %s" % action)
 
-        task_id = ''.join(choice('0123456789abcdef') for _ in xrange(10))
+        task_id = ''.join(choice('0123456789abcdef') for _ in range(10)).encode('utf-8')
         task_deferred = Deferred()
         self.pending_tasks[task_id] = task_deferred
 
@@ -263,11 +264,11 @@ class Executor(object):
 
 def exit_script():
     import sys
-    print 'Execution of task %s completed'
-    sys.exit(0)\n\n""" % task_id
+    print('Execution of task %s completed')
+    sys.exit(0)\n\n""" % task_id.decode('utf-8')
 
         code += action.generate_code() + '\nexit_script()'
-        base64_code = code.encode('base64')
+        base64_code = b64encode(code.encode('utf-8'))
 
         # Let Tribler execute this code
         self.execute_code(base64_code, task_id)
@@ -275,7 +276,7 @@ def exit_script():
         return task_deferred
 
     def execute_code(self, base64_code, task_id):
-        self._logger.info("Executing code with task id: %s" % task_id)
+        self._logger.info("Executing code with task id: %s" % task_id.decode('utf-8'))
         self.code_socket.run_code(base64_code, task_id)
 
     def perform_random_action(self):

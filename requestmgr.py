@@ -1,4 +1,5 @@
 import json
+import logging
 
 from twisted.internet import reactor
 from twisted.internet.defer import fail, Deferred
@@ -22,7 +23,7 @@ def http_get(uri):
 
     try:
         agent = Agent(reactor)
-        deferred = agent.request('GET', uri, Headers({'User-Agent': ['Tribler application tester']}), None)
+        deferred = agent.request(b'GET', uri, Headers({'User-Agent': ['Tribler application tester']}), None)
 
         deferred.addCallback(_on_response)
         return deferred
@@ -35,6 +36,9 @@ class HTTPRequestManager(object):
     This class manages requests to the Tribler core.
     """
 
+    def __init__(self):
+        self._logger = logging.getLogger(self.__class__.__name__)
+
     def get_token_balance(self):
         """
         Perform a request to the core to get the token balance.
@@ -45,43 +49,43 @@ class HTTPRequestManager(object):
                 return 0
             return json_response["wallets"]["MB"]["balance"]["available"]
 
-        return http_get("http://localhost:8085/wallets").addCallback(on_wallets_response)
+        return http_get(b"http://localhost:8085/wallets").addCallback(on_wallets_response)
 
     def get_downloads(self):
         """
         Perform a request to the core to get the downloads
         """
-        return http_get("http://localhost:8085/downloads")
+        return http_get(b"http://localhost:8085/downloads")
 
     def get_circuits_info(self):
         """
         Perform a request to the core to get circuits information
         """
-        return http_get("http://localhost:8085/ipv8/tunnel/circuits")
+        return http_get(b"http://localhost:8085/ipv8/tunnel/circuits")
 
     def get_overlay_statistics(self):
         """
         Perform a request to the core to get IPv8 overlay statistics
         """
-        return http_get("http://localhost:8085/ipv8/overlays")
+        return http_get(b"http://localhost:8085/ipv8/overlays")
 
     def get_memory_history_core(self):
         """
         Perform a request to the core to get the memory usage history
         """
-        return http_get("http://localhost:8085/debug/memory/history")
+        return http_get(b"http://localhost:8085/debug/memory/history")
 
     def get_cpu_history_core(self):
         """
         Perform a request to the core to get the CPU usage history
         """
-        return http_get("http://localhost:8085/debug/cpu/history")
+        return http_get(b"http://localhost:8085/debug/cpu/history")
 
     def get_state(self):
         """
         Get the current state of the Tribler instance
         """
-        return http_get("http://localhost:8085/state")
+        return http_get(b"http://localhost:8085/state")
 
     def is_tribler_started(self):
         """
@@ -93,7 +97,8 @@ class HTTPRequestManager(object):
             json_response = json.loads(response)
             started_deferred.callback(json_response['state'] == 'STARTED')
 
-        def on_error(_):
+        def on_error(failure):
+            self._logger.error(failure)
             started_deferred.callback(False)
 
         self.get_state().addCallbacks(on_response, on_error)
