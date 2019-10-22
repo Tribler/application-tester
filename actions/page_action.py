@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from random import choice
 
 from actions.click_action import ClickSequenceAction

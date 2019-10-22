@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import logging
 import os
 import subprocess
@@ -8,6 +10,7 @@ import sys
 import time
 
 import signal
+from six.moves import xrange
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, inlineCallbacks
 from twisted.internet.error import ConnectionRefusedError

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from twisted.internet import protocol, reactor
 from twisted.words.protocols import irc
 
