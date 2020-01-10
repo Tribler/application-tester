@@ -11,10 +11,11 @@ from twisted.web.client import readBody, Agent
 from twisted.web.http_headers import Headers
 
 
-def http_get(uri):
+def http_get(uri, headers):
     """
     Performs a GET request
     :param uri: The URL to perform a GET request to
+    :param headers: Headers for the request. X-Api-key is included in the headers.
     :return: A deferred firing the body of the response.
     :raises HttpError: When the HTTP response code is not OK (i.e. not the HTTP Code 200)
     """
@@ -25,7 +26,7 @@ def http_get(uri):
 
     try:
         agent = Agent(reactor)
-        deferred = agent.request(b'GET', uri, Headers({'User-Agent': ['Tribler application tester']}), None)
+        deferred = agent.request(b'GET', uri, headers, None)
 
         deferred.addCallback(_on_response)
         return deferred
@@ -38,8 +39,9 @@ class HTTPRequestManager(object):
     This class manages requests to the Tribler core.
     """
 
-    def __init__(self):
+    def __init__(self, api_key):
         self._logger = logging.getLogger(self.__class__.__name__)
+        self.headers = Headers({'User-Agent': ['Tribler application tester'], 'X-Api-Key': [api_key]})
 
     def get_token_balance(self):
         """
@@ -51,43 +53,43 @@ class HTTPRequestManager(object):
                 return 0
             return json_response["wallets"]["MB"]["balance"]["available"]
 
-        return http_get(b"http://localhost:8085/wallets").addCallback(on_wallets_response)
+        return http_get(b"http://localhost:8085/wallets", self.headers).addCallback(on_wallets_response)
 
     def get_downloads(self):
         """
         Perform a request to the core to get the downloads
         """
-        return http_get(b"http://localhost:8085/downloads")
+        return http_get(b"http://localhost:8085/downloads", self.headers)
 
     def get_circuits_info(self):
         """
         Perform a request to the core to get circuits information
         """
-        return http_get(b"http://localhost:8085/ipv8/tunnel/circuits")
+        return http_get(b"http://localhost:8085/ipv8/tunnel/circuits", self.headers)
 
     def get_overlay_statistics(self):
         """
         Perform a request to the core to get IPv8 overlay statistics
         """
-        return http_get(b"http://localhost:8085/ipv8/overlays")
+        return http_get(b"http://localhost:8085/ipv8/overlays", self.headers)
 
     def get_memory_history_core(self):
         """
         Perform a request to the core to get the memory usage history
         """
-        return http_get(b"http://localhost:8085/debug/memory/history")
+        return http_get(b"http://localhost:8085/debug/memory/history", self.headers)
 
     def get_cpu_history_core(self):
         """
         Perform a request to the core to get the CPU usage history
         """
-        return http_get(b"http://localhost:8085/debug/cpu/history")
+        return http_get(b"http://localhost:8085/debug/cpu/history", self.headers)
 
     def get_state(self):
         """
         Get the current state of the Tribler instance
         """
-        return http_get(b"http://localhost:8085/state")
+        return http_get(b"http://localhost:8085/state", self.headers)
 
     def is_tribler_started(self):
         """
