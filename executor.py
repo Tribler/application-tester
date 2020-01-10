@@ -5,12 +5,15 @@ import os
 import subprocess
 from base64 import b64encode
 from bisect import bisect
+from pathlib import Path
 from random import random, randint, choice
 import sys
 import time
 
 import signal
-from six.moves import xrange
+
+from configobj import ConfigObj
+
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, inlineCallbacks
 from twisted.internet.error import ConnectionRefusedError
@@ -37,6 +40,8 @@ from requestmgr import HTTPRequestManager
 from monitors.resource_monitor import ResourceMonitor
 from tcpsocket import TriblerCodeClientFactory
 
+from utils.osutils import get_appstate_dir
+
 
 class Executor(object):
 
@@ -52,7 +57,6 @@ class Executor(object):
         self.socket_factory = TriblerCodeClientFactory(self)
         self.code_socket = None
         self.start_time = time.time()
-        self.request_manager = HTTPRequestManager()
         self.irc_manager = None
         self.tribler_crashed = False
         self.download_monitor = None
@@ -65,6 +69,10 @@ class Executor(object):
         self.tribler_stopped_checks = 1
         self.tribler_process = None
         self.shutting_down = False
+
+        self.tribler_config = None
+        self.load_api_key()
+        self.request_manager = HTTPRequestManager(self.tribler_config['http_api']['key'])
 
         self.start_tribler()
 
@@ -109,6 +117,11 @@ class Executor(object):
                 reactor.callLater(5, self.check_tribler_started)
 
         return self.request_manager.is_tribler_started().addCallback(on_response)
+
+    def load_api_key(self):
+        config_file = get_appstate_dir() / ".Tribler" / "triblerd.conf"
+        spec_file = Path("config") / "tribler_config.spec"
+        self.tribler_config = ConfigObj(infile=str(config_file), configspec=str(spec_file), default_encoding='utf-8')
 
     def open_code_socket(self):
         self._logger.info("Opening Tribler code socket connection")
