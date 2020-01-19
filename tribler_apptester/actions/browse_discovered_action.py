@@ -1,9 +1,9 @@
 from __future__ import absolute_import
 
-from action_sequence import ActionSequence
-from actions.page_action import PageAction
-from actions.scroll_action import RandomScrollAction
-from actions.wait_action import WaitAction
+from tribler_apptester.action_sequence import ActionSequence
+from tribler_apptester.actions.page_action import PageAction
+from tribler_apptester.actions.scroll_action import RandomScrollAction
+from tribler_apptester.actions.wait_action import WaitAction
 
 
 class BrowseDiscoveredAction(ActionSequence):

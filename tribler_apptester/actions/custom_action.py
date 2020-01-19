@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from action import Action
+from tribler_apptester.action import Action
 
 
 class CustomAction(Action):

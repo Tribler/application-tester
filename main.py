@@ -5,7 +5,7 @@ import logging
 from asyncio import get_event_loop, ensure_future
 import os
 
-from executor import Executor
+from tribler_apptester.executor import Executor
 
 
 if __name__ == "__main__":

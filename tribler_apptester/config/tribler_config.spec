@@ -2,7 +2,7 @@
 version = string(default='')
 version_backup_enabled = boolean(default=True)
 log_dir = string(default='logs')
-testnet = boolean(default=False)
+testnet = boolean(default=True)
 version_checker_enabled = boolean(default=True)
 
 [tunnel_community]

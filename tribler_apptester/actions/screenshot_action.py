@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import os
 
-from action import Action
+from tribler_apptester.action import Action
 
 
 class ScreenshotAction(Action):

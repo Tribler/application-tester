@@ -2,10 +2,10 @@ from __future__ import absolute_import
 
 from random import choice
 
-from action_sequence import ActionSequence
-from actions.click_action import ClickAction
-from actions.custom_action import CustomAction
-from actions.wait_action import WaitAction
+from tribler_apptester.action_sequence import ActionSequence
+from tribler_apptester.actions.click_action import ClickAction
+from tribler_apptester.actions.custom_action import CustomAction
+from tribler_apptester.actions.wait_action import WaitAction
 
 
 class StartDownloadAction(ActionSequence):

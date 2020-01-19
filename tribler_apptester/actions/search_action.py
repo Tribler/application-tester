@@ -2,11 +2,11 @@ from __future__ import absolute_import
 
 from random import choice
 
-from action_sequence import ActionSequence
-from actions.click_action import ClickAction
-from actions.custom_action import CustomAction
-from actions.key_action import KeyAction
-from actions.keys_action import KeysAction
+from tribler_apptester.action_sequence import ActionSequence
+from tribler_apptester.actions.click_action import ClickAction
+from tribler_apptester.actions.custom_action import CustomAction
+from tribler_apptester.actions.key_action import KeyAction
+from tribler_apptester.actions.keys_action import KeysAction
 
 
 class SearchAction(ActionSequence):
