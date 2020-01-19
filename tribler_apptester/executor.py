@@ -43,7 +43,7 @@ class Executor(object):
     def __init__(self, args):
         self.args = args
         self.tribler_path = args.tribler_executable
-        self.code_port = args.code_port
+        self.code_port = args.codeport
         self._logger = logging.getLogger(self.__class__.__name__)
         self.allow_plain_downloads = args.plain
         self.magnets_file_path = args.magnetsfile
