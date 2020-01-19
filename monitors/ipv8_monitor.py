@@ -1,12 +1,11 @@
 from __future__ import absolute_import
 
-import json
+import logging
 import os
-
 import time
-from twisted.internet.task import LoopingCall
+from asyncio import ensure_future
 
-from requestmgr import HTTPRequestManager
+from utils.asyncio import looping_call
 
 
 class IPv8Monitor(object):
@@ -15,10 +14,11 @@ class IPv8Monitor(object):
     Specifically, it fetches information from the Tribler core and writes it to a file.
     """
 
-    def __init__(self, interval):
+    def __init__(self, request_manager, interval):
+        self._logger = logging.getLogger(self.__class__.__name__)
         self.interval = interval
-        self.request_manager = HTTPRequestManager()
-        self.monitor_lc = LoopingCall(self.monitor_ipv8)
+        self.request_manager = request_manager
+        self.monitor_lc = None
         self.start_time = time.time()
 
         # Create the output directory if it does not exist yet
@@ -34,7 +34,8 @@ class IPv8Monitor(object):
         """
         Start the monitoring loop for the downloads.
         """
-        self.monitor_lc.start(self.interval)
+        self._logger.info("Starting IPv8 monitor (interval: %d seconds)" % self.interval)
+        self.monitor_lc = ensure_future(looping_call(0, self.interval, self.monitor_ipv8))
 
     def stop(self):
         """
@@ -44,8 +45,11 @@ class IPv8Monitor(object):
             self.monitor_lc.stop()
             self.monitor_lc = None
 
-    def on_overlay_statistics(self, response):
-        statistics = json.loads(response)
+    async def monitor_ipv8(self):
+        """
+        Monitor IPv8.
+        """
+        statistics = await self.request_manager.get_overlay_statistics()
         if 'overlays' not in statistics:
             return
 
@@ -53,9 +57,3 @@ class IPv8Monitor(object):
             with open(self.overlay_stats_file_path, "a") as output_file:
                 time_diff = time.time() - self.start_time
                 output_file.write("%s,%s,%d\n" % (time_diff, overlay['master_peer'][-6:], len(overlay['peers'])))
-
-    def monitor_ipv8(self):
-        """
-        Monitor IPv8.
-        """
-        return self.request_manager.get_overlay_statistics().addCallback(self.on_overlay_statistics)

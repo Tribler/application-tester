@@ -1,22 +1,35 @@
 from __future__ import absolute_import
 
 import logging
+from asyncio import open_connection, get_event_loop, ensure_future
 from base64 import b64decode
 
-from twisted.internet import protocol
-from twisted.internet.defer import Deferred
-from twisted.python.failure import Failure
 
+class TriblerCodeClient(object):
 
-class TriblerCodeClient(protocol.Protocol):
-
-    def __init__(self):
+    def __init__(self, host, port, executor):
+        self._logger = logging.getLogger(self.__class__.__name__)
+        self.host = host
+        self.port = port
+        self.executor = executor
         self.buffer = b''
+        self.reader = None
+        self.writer = None
 
-    def connectionMade(self):
-        self.factory.connect_deferred.callback(self)
+    async def connect(self):
+        loop = get_event_loop()
+        self.reader, self.writer = await open_connection(self.host, self.port, loop=loop)
+        self._logger.info("Code socket opened!")
+        ensure_future(self.read_loop())
 
-    def dataReceived(self, data):
+    async def read_loop(self):
+        while True:
+            data = await self.reader.readline()
+            if not data:
+                break
+            self.data_received(data)
+
+    def data_received(self, data):
         """
         We received some data from Tribler. Parse it and handle it.
         """
@@ -37,30 +50,13 @@ class TriblerCodeClient(protocol.Protocol):
                 return
             result_value = b64decode(parts[1])
             task_id = parts[2]
-            self.factory.executor.on_task_result(task_id, result_value)
+            self.executor.on_task_result(task_id, result_value)
         elif data.startswith(b'crash'):
             parts = data.split(b' ')
             if len(parts) != 2:
                 return
             traceback = b64decode(parts[1])
-            self.factory.executor.on_tribler_crash(traceback)
+            self.executor.on_tribler_crash(traceback)
 
     def run_code(self, code, task_id):
-        self.transport.write(b"%s %s\n" % (code, task_id))
-
-
-class TriblerCodeClientFactory(protocol.ClientFactory):
-    protocol = TriblerCodeClient
-
-    def __init__(self, executor):
-        self._logger = logging.getLogger(self.__class__.__name__)
-        self.executor = executor
-        self.connect_deferred = Deferred()
-        self.connect_deferred.addCallbacks(self.executor.on_socket_ready, self.executor.on_socket_failed)
-
-    def clientConnectionFailed(self, connector, reason):
-        self._logger.warning("Tribler code socket connection failed: %s", reason)
-        self.connect_deferred.errback(Failure(RuntimeError("Failed to connect to Tribler socket!")))
-
-    def clientConnectionLost(self, connector, reason):
-        self._logger.warning("Tribler code socket connection lost: %s", reason)
+        self.writer.write(b"%s %s\n" % (code, task_id))
