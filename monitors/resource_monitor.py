@@ -1,12 +1,11 @@
 from __future__ import absolute_import
 
-import json
+import logging
 import os
-
 import time
-from twisted.internet.task import LoopingCall
+from asyncio import ensure_future
 
-from requestmgr import HTTPRequestManager
+from utils.asyncio import looping_call
 
 
 class ResourceMonitor(object):
@@ -15,11 +14,12 @@ class ResourceMonitor(object):
     Specifically, it fetches information from the Tribler core and writes it to a file.
     """
 
-    def __init__(self, interval):
+    def __init__(self, request_manager, interval):
+        self._logger = logging.getLogger(self.__class__.__name__)
         self.interval = interval
-        self.request_manager = HTTPRequestManager()
-        self.monitor_memory_lc = LoopingCall(self.monitor_memory)
-        self.monitor_cpu_lc = LoopingCall(self.monitor_cpu)
+        self.request_manager = request_manager
+        self.monitor_memory_lc = None
+        self.monitor_cpu_lc = None
         self.start_time = time.time()
         self.latest_memory_time = 0
         self.latest_cpu_time = 0
@@ -41,8 +41,9 @@ class ResourceMonitor(object):
         """
         Start the monitoring loop for the resources.
         """
-        self.monitor_memory_lc.start(self.interval)
-        self.monitor_cpu_lc.start(self.interval)
+        self._logger.info("Starting resource monitor (interval: %d seconds)" % self.interval)
+        self.monitor_memory_lc = ensure_future(looping_call(0, self.interval, self.monitor_memory))
+        self.monitor_cpu_lc = ensure_future(looping_call(0, self.interval, self.monitor_cpu))
 
     def stop(self):
         """
@@ -56,8 +57,11 @@ class ResourceMonitor(object):
             self.monitor_cpu_lc.stop()
             self.monitor_cpu_lc = None
 
-    def on_memory_history(self, response):
-        history = json.loads(response)
+    async def monitor_memory(self):
+        """
+        Monitor the memory usage in Tribler.
+        """
+        history = await self.request_manager.get_memory_history_core()
         for history_item in history["memory_history"]:
             if history_item["time"] > self.latest_memory_time:
                 self.latest_memory_time = history_item["time"]
@@ -65,23 +69,14 @@ class ResourceMonitor(object):
                 with open(self.memory_stats_file_path, "a") as output_file:
                     output_file.write("%s,%s\n" % (time_diff, history_item["mem"]))
 
-    def on_cpu_history(self, response):
-        history = json.loads(response)
+    async def monitor_cpu(self):
+        """
+        Monitor the CPU usage in Tribler.
+        """
+        history = await self.request_manager.get_cpu_history_core()
         for history_item in history["cpu_history"]:
             if history_item["time"] > self.latest_cpu_time:
                 self.latest_cpu_time = history_item["time"]
                 time_diff = history_item["time"] - self.start_time
                 with open(self.cpu_stats_file_path, "a") as output_file:
                     output_file.write("%s,%s\n" % (time_diff, history_item["cpu"]))
-
-    def monitor_memory(self):
-        """
-        Monitor the memory usage in Tribler.
-        """
-        return self.request_manager.get_memory_history_core().addCallback(self.on_memory_history)
-
-    def monitor_cpu(self):
-        """
-        Monitor the CPU usage in Tribler.
-        """
-        return self.request_manager.get_cpu_history_core().addCallback(self.on_cpu_history)

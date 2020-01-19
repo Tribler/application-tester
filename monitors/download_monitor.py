@@ -1,12 +1,11 @@
 from __future__ import absolute_import
 
-import json
+import logging
 import os
-
 import time
-from twisted.internet.task import LoopingCall
+from asyncio import ensure_future
 
-from requestmgr import HTTPRequestManager
+from utils.asyncio import looping_call
 
 
 class DownloadMonitor(object):
@@ -15,10 +14,11 @@ class DownloadMonitor(object):
     Specifically, it fetches information from the Tribler core and writes it to a file.
     """
 
-    def __init__(self, interval):
+    def __init__(self, request_manager, interval):
+        self._logger = logging.getLogger(self.__class__.__name__)
         self.interval = interval
-        self.request_manager = HTTPRequestManager()
-        self.monitor_lc = LoopingCall(self.monitor_downloads)
+        self.request_manager = request_manager
+        self.monitor_lc = None
         self.start_time = time.time()
 
         # Create the output directory if it does not exist yet
@@ -46,7 +46,8 @@ class DownloadMonitor(object):
         """
         Start the monitoring loop for the downloads.
         """
-        self.monitor_lc.start(self.interval)
+        self._logger.info("Starting download monitor (interval: %d seconds)" % self.interval)
+        self.monitor_lc = ensure_future(looping_call(0, self.interval, self.monitor_downloads))
 
     def stop(self):
         """
@@ -56,8 +57,11 @@ class DownloadMonitor(object):
             self.monitor_lc.stop()
             self.monitor_lc = None
 
-    def on_downloads(self, response):
-        downloads = json.loads(response)
+    async def monitor_downloads(self):
+        """
+        Monitor the downloads in Tribler.
+        """
+        downloads = await self.request_manager.get_downloads()
         for download in downloads["downloads"]:
             with open(self.download_stats_file_path, "a") as output_file:
                 time_diff = time.time() - self.start_time
@@ -69,10 +73,7 @@ class DownloadMonitor(object):
                                                            download["progress"]))
 
         # Now we get the number of circuits
-        return self.request_manager.get_circuits_info().addCallback(self.on_circuits_info)
-
-    def on_circuits_info(self, response):
-        circuits_info = json.loads(response)
+        circuits_info = await self.request_manager.get_circuits_info()
         time_diff = time.time() - self.start_time
         circuits_ready = circuits_extending = circuits_closing = 0
         circuits_data = circuits_ip = circuits_rp = circuits_rendezvous = 0
@@ -116,9 +117,3 @@ class DownloadMonitor(object):
                                                     circuits_ip,
                                                     circuits_rp,
                                                     circuits_rendezvous))
-
-    def monitor_downloads(self):
-        """
-        Monitor the downloads in Tribler.
-        """
-        return self.request_manager.get_downloads().addCallback(self.on_downloads)
