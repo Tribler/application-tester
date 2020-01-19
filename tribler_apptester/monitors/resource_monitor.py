@@ -5,7 +5,7 @@ import os
 import time
 from asyncio import ensure_future
 
-from utils.asyncio import looping_call
+from tribler_apptester.utils.asyncio import looping_call
 
 
 class ResourceMonitor(object):

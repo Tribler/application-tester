@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+
 class ActionSequence(object):
     """
     An action sequence is a list of actions. This allows programmers to define their own complicated sequence.

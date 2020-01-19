@@ -15,28 +15,27 @@ import signal
 
 from configobj import ConfigObj
 
-from actions.browse_discovered_action import BrowseDiscoveredAction
-from actions.change_anonymity_action import ChangeAnonymityAction
-from actions.change_download_files_action import ChangeDownloadFilesAction
-from actions.explore_channel_action import ExploreChannelAction
-from actions.explore_download_action import ExploreDownloadAction
-from actions.page_action import RandomPageAction
-from actions.screenshot_action import ScreenshotAction
-from actions.search_action import RandomSearchAction
-from actions.shutdown_action import ShutdownAction
-from actions.start_download_action import StartRandomDownloadAction
-from actions.remove_download_action import RemoveRandomDownloadAction
-from actions.start_vod_action import StartVODAction
-from actions.subscribe_unsubscribe_action import SubscribeUnsubscribeAction
-from actions.wait_action import WaitAction
-from monitors.download_monitor import DownloadMonitor
-from monitors.ipv8_monitor import IPv8Monitor
-from requestmgr import HTTPRequestManager
-from monitors.resource_monitor import ResourceMonitor
-from tcpsocket import TriblerCodeClient
-from utils.asyncio import looping_call
-
-from utils.osutils import get_appstate_dir
+from tribler_apptester.actions.browse_discovered_action import BrowseDiscoveredAction
+from tribler_apptester.actions.change_anonymity_action import ChangeAnonymityAction
+from tribler_apptester.actions.change_download_files_action import ChangeDownloadFilesAction
+from tribler_apptester.actions.explore_channel_action import ExploreChannelAction
+from tribler_apptester.actions.explore_download_action import ExploreDownloadAction
+from tribler_apptester.actions.page_action import RandomPageAction
+from tribler_apptester.actions.screenshot_action import ScreenshotAction
+from tribler_apptester.actions.search_action import RandomSearchAction
+from tribler_apptester.actions.shutdown_action import ShutdownAction
+from tribler_apptester.actions.start_download_action import StartRandomDownloadAction
+from tribler_apptester.actions.remove_download_action import RemoveRandomDownloadAction
+from tribler_apptester.actions.start_vod_action import StartVODAction
+from tribler_apptester.actions.subscribe_unsubscribe_action import SubscribeUnsubscribeAction
+from tribler_apptester.actions.wait_action import WaitAction
+from tribler_apptester.monitors.download_monitor import DownloadMonitor
+from tribler_apptester.monitors.ipv8_monitor import IPv8Monitor
+from tribler_apptester.monitors.resource_monitor import ResourceMonitor
+from tribler_apptester.requestmgr import HTTPRequestManager
+from tribler_apptester.tcpsocket import TriblerCodeClient
+from tribler_apptester.utils.asyncio import looping_call
+from tribler_apptester.utils.osutils import get_appstate_dir
 
 
 class Executor(object):
@@ -118,7 +117,7 @@ class Executor(object):
 
     def load_tribler_config(self):
         config_file = get_appstate_dir() / ".Tribler" / "triblerd.conf"
-        spec_file = Path("config") / "tribler_config.spec"
+        spec_file = Path("tribler_apptester") / "config" / "tribler_config.spec"
         self.tribler_config = ConfigObj(infile=str(config_file), configspec=str(spec_file), default_encoding='utf-8')
         self._logger.info("Loaded API key: %s" % self.tribler_config['http_api']['key'])
 
@@ -146,7 +145,7 @@ class Executor(object):
 
     def determine_probabilities(self):
         self._logger.info("Determining probabilities of actions")
-        with open(os.path.join(os.getcwd(), "data", "action_weights.txt"), "r") as action_weights_file:
+        with open(Path("tribler_apptester") / "data" / "action_weights.txt", "r") as action_weights_file:
             content = action_weights_file.read()
             for line in content.split('\n'):
                 if len(line) == 0:
