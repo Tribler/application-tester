@@ -53,8 +53,8 @@ class DownloadMonitor(object):
         """
         Stop the monitoring loop for the downloads.
         """
-        if self.monitor_lc and self.monitor_lc.running:
-            self.monitor_lc.stop()
+        if self.monitor_lc:
+            self.monitor_lc.cancel()
             self.monitor_lc = None
 
     async def monitor_downloads(self):

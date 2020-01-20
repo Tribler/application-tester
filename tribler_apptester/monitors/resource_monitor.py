@@ -49,12 +49,12 @@ class ResourceMonitor(object):
         """
         Stop the monitoring loop for the resources.
         """
-        if self.monitor_memory_lc and self.monitor_memory_lc.running:
-            self.monitor_memory_lc.stop()
+        if self.monitor_memory_lc:
+            self.monitor_memory_lc.cancel()
             self.monitor_memory_lc = None
 
-        if self.monitor_cpu_lc and self.monitor_cpu_lc.running:
-            self.monitor_cpu_lc.stop()
+        if self.monitor_cpu_lc:
+            self.monitor_cpu_lc.cancel()
             self.monitor_cpu_lc = None
 
     async def monitor_memory(self):
