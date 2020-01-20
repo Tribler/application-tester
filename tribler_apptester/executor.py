@@ -91,10 +91,13 @@ class Executor(object):
         self.tribler_process = subprocess.Popen("%s --allow-code-injection --testnet" % self.tribler_path, shell=True)
         await sleep(5)
 
-        self.load_tribler_config()
-        self.request_manager = HTTPRequestManager(self.tribler_config['http_api']['key'])
-
-        await self.check_tribler_started()
+        loaded_config = await self.load_tribler_config()
+        if not loaded_config:
+            self._logger.warning("Loading Tribler config loaded, aborting")
+            ensure_future(self.stop(1))
+        else:
+            self.request_manager = HTTPRequestManager(self.tribler_config['http_api']['key'])
+            await self.check_tribler_started()
 
     async def check_tribler_started(self):
 
@@ -115,11 +118,24 @@ class Executor(object):
             self._logger.error("Tribler did not seem to start within reasonable time, bailing out")
             self.shutdown_tester(1)
 
-    def load_tribler_config(self):
-        config_file = get_appstate_dir() / ".Tribler" / "triblerd.conf"
+    async def load_tribler_config(self):
+        """
+        Attempt to load the Tribler config until we have an API key.
+        """
+        config_file_path = get_appstate_dir() / ".Tribler" / "triblerd.conf"
         spec_file = Path("tribler_apptester") / "config" / "tribler_config.spec"
-        self.tribler_config = ConfigObj(infile=str(config_file), configspec=str(spec_file), default_encoding='utf-8')
-        self._logger.info("Loaded API key: %s" % self.tribler_config['http_api']['key'])
+
+        for attempt in range(1, 10):
+            self._logger.info("Attempting to load Tribler config (%d/10)", attempt)
+            config = ConfigObj(infile=str(config_file_path), configspec=str(spec_file), default_encoding='utf-8')
+            if 'http_api' not in config or 'key' not in config['http_api']:
+                await sleep(2)
+            else:
+                self.tribler_config = config
+                self._logger.info("Loaded API key: %s" % self.tribler_config['http_api']['key'])
+                return True
+
+        return True
 
     async def open_code_socket(self):
         self._logger.info("Opening Tribler code socket connection to port %d" % self.code_client.port)
