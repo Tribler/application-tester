@@ -49,7 +49,7 @@ class Executor(object):
         self.magnets_file_path = args.magnetsfile
         self.pending_tasks = {}  # Dictionary of pending tasks
         self.probabilities = []
-        self.code_client = TriblerCodeClient("localhost", 5500, self)
+        self.code_client = TriblerCodeClient("localhost", self.code_port, self)
         self.start_time = time.time()
         self.tribler_crashed = False
         self.download_monitor = None
@@ -122,7 +122,7 @@ class Executor(object):
         self._logger.info("Loaded API key: %s" % self.tribler_config['http_api']['key'])
 
     async def open_code_socket(self):
-        self._logger.info("Opening Tribler code socket connection")
+        self._logger.info("Opening Tribler code socket connection to port %d" % self.code_client.port)
 
         await self.code_client.connect()
 
