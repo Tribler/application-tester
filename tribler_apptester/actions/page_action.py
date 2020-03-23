@@ -10,7 +10,6 @@ class PageAction(ClickSequenceAction):
     This action goes to a specific page in Tribler.
     """
     BUTTONS_TO_PAGES = {
-        'home': ['window.left_menu_button_home'],
         'discovered': ['window.left_menu_button_discovered'],
         'downloads': ['window.left_menu_button_downloads'],
         'my_channel': ['window.left_menu_button_my_channel'],
