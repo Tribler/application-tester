@@ -1,8 +1,10 @@
-from asyncio import sleep, ensure_future
+from asyncio import sleep
 
 
 async def looping_call(delay, interval, task, *args):
     await sleep(delay)
     while True:
-        ensure_future(task(*args))
+        res = task(*args)
+        if res:
+            await task(*args)
         await sleep(interval)
