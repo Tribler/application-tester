@@ -145,7 +145,7 @@ class Executor(object):
         self.determine_probabilities()
 
         if not self.args.silent:
-            self.random_action_lc = ensure_future(looping_call(0, 5, self.perform_random_action))
+            self.random_action_lc = ensure_future(looping_call(0, 15, self.perform_random_action))
 
         if self.args.monitordownloads:
             self.download_monitor = DownloadMonitor(self.request_manager, self.args.monitordownloads)
