@@ -255,7 +255,8 @@ class Executor(object):
         Tribler has crashed. Handle the error and shut everything down.
         """
         self._logger.error("********** TRIBLER CRASHED **********")
-        self._logger.error("Tribler crashed after uptime of %s sec! Stack trace: %s", self.uptime, traceback)
+        self._logger.error("Tribler crashed after uptime of %s sec! Stack trace: %s",
+                           self.uptime, traceback.decode('utf-8'))
         self.tribler_crashed = True
         ensure_future(self.stop(1))
 
