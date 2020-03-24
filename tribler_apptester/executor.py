@@ -145,7 +145,7 @@ class Executor(object):
         self.determine_probabilities()
 
         if not self.args.silent:
-            self.random_action_lc = ensure_future(looping_call(0, 5, self.perform_random_action))
+            self.random_action_lc = ensure_future(looping_call(0, 15, self.perform_random_action))
 
         if self.args.monitordownloads:
             self.download_monitor = DownloadMonitor(self.request_manager, self.args.monitordownloads)
@@ -255,7 +255,8 @@ class Executor(object):
         Tribler has crashed. Handle the error and shut everything down.
         """
         self._logger.error("********** TRIBLER CRASHED **********")
-        self._logger.error("Tribler crashed after uptime of %s sec! Stack trace: %s", self.uptime, traceback)
+        self._logger.error("Tribler crashed after uptime of %s sec! Stack trace: %s",
+                           self.uptime, traceback.decode('utf-8'))
         self.tribler_crashed = True
         ensure_future(self.stop(1))
 
