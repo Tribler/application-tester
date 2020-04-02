@@ -16,7 +16,7 @@ import signal
 from configobj import ConfigObj
 
 from tribler_apptester import TRIBLER_VERSION
-from tribler_apptester.actions.browse_discovered_action import BrowseDiscoveredAction
+from tribler_apptester.actions.scroll_discovered_action import ScrollDiscoveredAction
 from tribler_apptester.actions.change_anonymity_action import ChangeAnonymityAction
 from tribler_apptester.actions.change_download_files_action import ChangeDownloadFilesAction
 from tribler_apptester.actions.explore_channel_action import ExploreChannelAction
@@ -327,8 +327,8 @@ def exit_script():
             action = RemoveRandomDownloadAction()
         elif action == 'explore_download':
             action = ExploreDownloadAction()
-        elif action == 'browse_discovered':
-            action = BrowseDiscoveredAction()
+        elif action == 'scroll_discovered':
+            action = ScrollDiscoveredAction()
         elif action == 'explore_channel':
             action = ExploreChannelAction()
         elif action == 'screenshot':
