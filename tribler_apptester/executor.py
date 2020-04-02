@@ -15,6 +15,7 @@ import signal
 
 from configobj import ConfigObj
 
+from tribler_apptester import TRIBLER_VERSION
 from tribler_apptester.actions.browse_discovered_action import BrowseDiscoveredAction
 from tribler_apptester.actions.change_anonymity_action import ChangeAnonymityAction
 from tribler_apptester.actions.change_download_files_action import ChangeDownloadFilesAction
@@ -122,7 +123,7 @@ class Executor(object):
         """
         Attempt to load the Tribler config until we have an API key.
         """
-        config_file_path = get_appstate_dir() / ".Tribler" / "triblerd.conf"
+        config_file_path = get_appstate_dir() / ".Tribler" / TRIBLER_VERSION / "triblerd.conf"
         spec_file = Path("tribler_apptester") / "config" / "tribler_config.spec"
 
         for attempt in range(1, 10):
