@@ -20,6 +20,7 @@ class PageAction(ClickSequenceAction):
         'settings': ['window.settings_button'],
         'market': ['window.token_balance_widget', 'window.trade_button'],
         'token_mining': ['window.token_balance_widget', 'window.mine_button'],
+        'trust_graph': ['window.left_menu_button_trust_graph']
     }
 
     def __init__(self, page_name):
