@@ -15,7 +15,9 @@ import signal
 
 from configobj import ConfigObj
 
-from tribler_apptester.actions.browse_discovered_action import BrowseDiscoveredAction
+from tribler_apptester import TRIBLER_VERSION
+from tribler_apptester.actions.manage_channel_action import ManageChannelAction
+from tribler_apptester.actions.scroll_discovered_action import ScrollDiscoveredAction
 from tribler_apptester.actions.change_anonymity_action import ChangeAnonymityAction
 from tribler_apptester.actions.change_download_files_action import ChangeDownloadFilesAction
 from tribler_apptester.actions.explore_channel_action import ExploreChannelAction
@@ -122,7 +124,7 @@ class Executor(object):
         """
         Attempt to load the Tribler config until we have an API key.
         """
-        config_file_path = get_appstate_dir() / ".Tribler" / "triblerd.conf"
+        config_file_path = get_appstate_dir() / ".Tribler" / TRIBLER_VERSION / "triblerd.conf"
         spec_file = Path("tribler_apptester") / "config" / "tribler_config.spec"
 
         for attempt in range(1, 10):
@@ -326,8 +328,8 @@ def exit_script():
             action = RemoveRandomDownloadAction()
         elif action == 'explore_download':
             action = ExploreDownloadAction()
-        elif action == 'browse_discovered':
-            action = BrowseDiscoveredAction()
+        elif action == 'scroll_discovered':
+            action = ScrollDiscoveredAction()
         elif action == 'explore_channel':
             action = ExploreChannelAction()
         elif action == 'screenshot':
@@ -340,5 +342,10 @@ def exit_script():
             action = SubscribeUnsubscribeAction()
         elif action == 'change_download_files':
             action = ChangeDownloadFilesAction()
+        elif action == 'manage_channel':
+            action = ManageChannelAction()
 
-        self.execute_action(action)
+        try:
+            self.execute_action(action)
+        except Exception as e:
+            self._logger.exception(e)

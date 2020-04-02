@@ -6,15 +6,15 @@ from tribler_apptester.actions.scroll_action import RandomScrollAction
 from tribler_apptester.actions.wait_action import WaitAction
 
 
-class BrowseDiscoveredAction(ActionSequence):
+class ScrollDiscoveredAction(ActionSequence):
     """
     This action scrolls through the discovered torrents in Tribler.
     """
 
     def __init__(self):
-        super(BrowseDiscoveredAction, self).__init__()
+        super(ScrollDiscoveredAction, self).__init__()
 
         self.add_action(PageAction('discovered'))
         for _ in range(0, 10):
-            self.add_action(RandomScrollAction("window.discovered_channels_list"))
+            self.add_action(RandomScrollAction("window.discovered_page.content_table"))
             self.add_action(WaitAction(300))
