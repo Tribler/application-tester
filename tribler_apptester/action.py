@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 
 
 class Action(object):
@@ -13,7 +13,6 @@ class Action(object):
     - an implementation for the generate_code class, which is expected to return a string with code
     - a list of required imports to run the code returned by generate_code
     """
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def action_code(self):
@@ -27,6 +26,5 @@ class Action(object):
         code += self.action_code()
         return code
 
-    @abstractmethod
     def required_imports(self):
-        pass
+        return []

@@ -16,6 +16,7 @@ import signal
 from configobj import ConfigObj
 
 from tribler_apptester import TRIBLER_VERSION
+from tribler_apptester.actions.manage_channel_action import ManageChannelAction
 from tribler_apptester.actions.scroll_discovered_action import ScrollDiscoveredAction
 from tribler_apptester.actions.change_anonymity_action import ChangeAnonymityAction
 from tribler_apptester.actions.change_download_files_action import ChangeDownloadFilesAction
@@ -341,5 +342,10 @@ def exit_script():
             action = SubscribeUnsubscribeAction()
         elif action == 'change_download_files':
             action = ChangeDownloadFilesAction()
+        elif action == 'manage_channel':
+            action = ManageChannelAction()
 
-        self.execute_action(action)
+        try:
+            self.execute_action(action)
+        except Exception as e:
+            self._logger.exception(e)
