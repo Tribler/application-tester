@@ -312,12 +312,14 @@ def exit_script():
         This method performs a random action in Tribler.
         There are various actions possible that can occur with different probabilities.
         """
-        action = self.weighted_choice(self.probabilities)
-        if not action:
+        action_name = self.weighted_choice(self.probabilities)
+        if not action_name:
             self._logger.warning("No action available!")
             self.execute_action(WaitAction(1000))
             return
-        self._logger.info("Performing action: %s", action)
+        self._logger.info("Performing action: %s", action_name)
+
+        action = None
         if action == 'random_page':
             action = RandomPageAction()
         elif action == 'search':
@@ -345,7 +347,10 @@ def exit_script():
         elif action == 'manage_channel':
             action = ManageChannelAction()
 
-        try:
-            self.execute_action(action)
-        except Exception as e:
-            self._logger.exception(e)
+        if action:
+            try:
+                self.execute_action(action)
+            except Exception as e:
+                self._logger.exception(e)
+        else:
+            self._logger.error("Action %s does not exist!", action)
