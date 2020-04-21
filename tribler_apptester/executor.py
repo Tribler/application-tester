@@ -109,6 +109,7 @@ class Executor(object):
             started = await self.request_manager.is_tribler_started()
             if started:
                 success = True
+                self.request_manager.tribler_start_time = int(round(time.time() * 1000))
                 break
             else:
                 await sleep(5)
