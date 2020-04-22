@@ -29,4 +29,4 @@ else:
         return Path().home()
 
     def get_appstate_dir():
-        return get_home_dir()
+        return get_home_dir() / ".Tribler"
