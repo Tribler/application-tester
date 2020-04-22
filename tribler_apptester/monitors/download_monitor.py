@@ -63,8 +63,8 @@ class DownloadMonitor(object):
         """
         downloads = await self.request_manager.get_downloads()
         for download in downloads["downloads"]:
+            time_diff = time.time() - self.start_time
             with open(self.download_stats_file_path, "a") as output_file:
-                time_diff = time.time() - self.start_time
                 output_file.write("%s,%s,%s,%s,%s,%f\n" % (time_diff,
                                                            download["infohash"],
                                                            download["status"],
