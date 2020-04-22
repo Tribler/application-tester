@@ -1,11 +1,13 @@
 from __future__ import absolute_import
 
+import json
 import logging
 import os
 import subprocess
 from asyncio import get_event_loop, ensure_future, sleep, Future
 from base64 import b64encode
 from bisect import bisect
+from distutils.version import LooseVersion
 from pathlib import Path
 from random import random, randint, choice
 import sys
@@ -129,18 +131,29 @@ class Executor(object):
         """
         Attempt to load the Tribler config until we have an API key.
         """
-        config_file_path = get_appstate_dir() / ".Tribler" / TRIBLER_VERSION / "triblerd.conf"
         spec_file = Path("tribler_apptester") / "config" / "tribler_config.spec"
 
         for attempt in range(1, 10):
             self._logger.info("Attempting to load Tribler config (%d/10)", attempt)
-            config = ConfigObj(infile=str(config_file_path), configspec=str(spec_file), default_encoding='utf-8')
-            if 'http_api' not in config or 'key' not in config['http_api']:
+
+            # Read the version_history file and derive the current state dir from that
+            versions_file_path = get_appstate_dir() / "version_history.json"
+            if not versions_file_path.exists():
                 await sleep(2)
             else:
-                self.tribler_config = config
-                self._logger.info("Loaded API key: %s" % self.tribler_config['http_api']['key'])
-                return True
+                with open(versions_file_path, "r") as versions_file:
+                    json_content = json.loads(versions_file.read())
+
+                state_dir_name = ".".join(str(part) for part in LooseVersion(json_content["last_version"]).version[:2])
+                config_file_path = get_appstate_dir() / state_dir_name / "triblerd.conf"
+
+                config = ConfigObj(infile=str(config_file_path), configspec=str(spec_file), default_encoding='utf-8')
+                if 'http_api' not in config or 'key' not in config['http_api']:
+                    await sleep(2)
+                else:
+                    self.tribler_config = config
+                    self._logger.info("Loaded API key: %s" % self.tribler_config['http_api']['key'])
+                    return True
 
         return True
 
