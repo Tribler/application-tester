@@ -90,7 +90,11 @@ class Executor(object):
         Start Tribler if it has not been started yet.
         """
         self._logger.info("Tribler not running - starting it")
-        self.tribler_process = subprocess.Popen("%s --allow-code-injection --testnet" % self.tribler_path, shell=True)
+        cmd = "%s --allow-code-injection" % self.tribler_path
+        if self.args.testnet:
+            cmd += " --testnet"
+
+        self.tribler_process = subprocess.Popen(cmd, shell=True)
         await sleep(5)
 
         loaded_config = await self.load_tribler_config()
