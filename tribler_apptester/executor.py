@@ -139,6 +139,7 @@ class Executor(object):
             # Read the version_history file and derive the current state dir from that
             versions_file_path = get_appstate_dir() / "version_history.json"
             if not versions_file_path.exists():
+                self._logger.info("Version file at %s does not exist, waiting...", versions_file_path)
                 await sleep(2)
             else:
                 with open(versions_file_path, "r") as versions_file:
@@ -146,6 +147,7 @@ class Executor(object):
 
                 state_dir_name = ".".join(str(part) for part in LooseVersion(json_content["last_version"]).version[:2])
                 config_file_path = get_appstate_dir() / state_dir_name / "triblerd.conf"
+                self._logger.info("Config file path: %s", config_file_path)
 
                 config = ConfigObj(infile=str(config_file_path), configspec=str(spec_file), default_encoding='utf-8')
                 if 'http_api' not in config or 'key' not in config['http_api']:
