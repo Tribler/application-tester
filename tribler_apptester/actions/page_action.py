@@ -19,7 +19,6 @@ class PageAction(ClickSequenceAction):
         'token_balance': ['window.token_balance_widget'],
         'settings': ['window.settings_button'],
         'market': ['window.token_balance_widget', 'window.trade_button'],
-        'token_mining': ['window.token_balance_widget', 'window.mine_button'],
         'trust_graph': ['window.left_menu_button_trust_graph']
     }
 
