@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from tribler_apptester.action_sequence import ActionSequence
 from tribler_apptester.actions.click_action import ClickAction
 from tribler_apptester.actions.custom_action import CustomAction

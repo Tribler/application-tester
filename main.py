@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import argparse
 import logging
 from asyncio import get_event_loop, ensure_future
