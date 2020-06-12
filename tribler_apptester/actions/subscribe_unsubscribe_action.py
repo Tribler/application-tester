@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from tribler_apptester.action_sequence import ActionSequence
 from tribler_apptester.actions.click_action import ClickAction, RandomTableViewClickAction
+from tribler_apptester.actions.conditional_action import ConditionalAction
 from tribler_apptester.actions.custom_action import CustomAction
 from tribler_apptester.actions.page_action import PageAction
 from tribler_apptester.actions.wait_action import WaitAction
@@ -23,7 +24,8 @@ class SubscribeUnsubscribeAction(ActionSequence):
         self.add_action(RandomTableViewClickAction('window.discovered_page.content_table'))
         self.add_action(WaitAction(2000))
 
-        self.add_action(ClickAction('window.discovered_page.subscribe_button'))
+        click_action = ClickAction('window.discovered_page.subscribe_button')
+        self.add_action(ConditionalAction("window.discovered_page.subscribe_button.isVisible()", click_action))
         self.add_action(WaitAction(2000))
         self.add_action(ClickAction('window.discovered_page.channel_back_button'))
 
