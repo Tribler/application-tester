@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from tribler_apptester.action import Action
 
 

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import logging
 from asyncio import open_connection, get_event_loop, ensure_future
 from base64 import b64decode

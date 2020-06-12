@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from tribler_apptester.action_sequence import ActionSequence
 from tribler_apptester.actions.page_action import PageAction
 from tribler_apptester.actions.scroll_action import RandomScrollAction
