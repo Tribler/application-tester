@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from random import choice
 
 from tribler_apptester.action_sequence import ActionSequence
