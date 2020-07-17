@@ -36,13 +36,15 @@ if(file.exists("output/download_stats.csv")){
 
     ggsave(file="output/progress.png", width=8, height=6, dpi=100)
 
-    # State
-    df2 <- aggregate(df, by=list(df$time, df$status), FUN="length")
-    p <- ggplot(df2, aes(x=Group.1, y=status, group=Group.2, colour=Group.2)) + theme_bw()
-    p <- p + geom_line()
-    p <- p + theme(legend.position="bottom", legend.direction="horizontal") + xlab("Time into experiment (sec)") + ylab("Count") + ggtitle("Status of individual downloads")
-    p <- p + guides(colour=guide_legend(ncol=3))
-    p
+    if(nrow(df) > 0) {
+        # State
+        df2 <- aggregate(df, by=list(df$time, df$status), FUN="length")
+        p <- ggplot(df2, aes(x=Group.1, y=status, group=Group.2, colour=Group.2)) + theme_bw()
+        p <- p + geom_line()
+        p <- p + theme(legend.position="bottom", legend.direction="horizontal") + xlab("Time into experiment (sec)") + ylab("Count") + ggtitle("Status of individual downloads")
+        p <- p + guides(colour=guide_legend(ncol=3))
+        p
 
-    ggsave(file="output/download_states.png", width=8, height=6, dpi=100)
+        ggsave(file="output/download_states.png", width=8, height=6, dpi=100)
+    }
 }
