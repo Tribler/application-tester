@@ -12,7 +12,6 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--plain', action='store_true', help='allow plain downloads')
     parser.add_argument('-d', '--duration', default=None, type=int, help='run the Tribler application tester for a specific period of time')
     parser.add_argument('-s', '--silent', action='store_true', help='do not execute random actions')
-    parser.add_argument('-t', '--testnet', action='store_true', help='start Tribler with the testnet flag')
     parser.add_argument('--codeport', default=5500, type=int, help='the port used to execute code')
     parser.add_argument('--monitordownloads', default=None, type=int, help='monitor the downloads with a specified interval in seconds')
     parser.add_argument('--monitorresources', default=None, type=int, help='monitor the resources with a specified interval in seconds')
