@@ -1,10 +1,17 @@
 import argparse
 import logging
-from asyncio import get_event_loop, ensure_future
+import os
+from asyncio import ensure_future, get_event_loop
 from pathlib import Path
+
+import sentry_sdk
 
 from tribler_apptester.executor import Executor
 
+sentry_sdk.init(
+    os.environ.get('SENTRY_URL', 'https://e489691c2e214c03961e18069a71d76c@sentry.tribler.org/6'),
+    traces_sample_rate=1.0
+)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run a Tribler application test.')
