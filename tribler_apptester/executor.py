@@ -15,7 +15,6 @@ import signal
 
 from configobj import ConfigObj
 
-from tribler_apptester import TRIBLER_VERSION
 from tribler_apptester.actions.manage_channel_action import ManageChannelAction
 from tribler_apptester.actions.scroll_discovered_action import ScrollDiscoveredAction
 from tribler_apptester.actions.change_anonymity_action import ChangeAnonymityAction
@@ -100,7 +99,7 @@ class Executor(object):
             self._logger.warning("Loading Tribler config loaded, aborting")
             ensure_future(self.stop(1))
         else:
-            self.request_manager = HTTPRequestManager(self.tribler_config['http_api']['key'])
+            self.request_manager = HTTPRequestManager(self.tribler_config['api']['key'])
             await self.check_tribler_started()
 
     async def check_tribler_started(self):
@@ -146,11 +145,11 @@ class Executor(object):
                 self._logger.info("Config file path: %s", config_file_path)
 
                 config = ConfigObj(infile=str(config_file_path), configspec=str(spec_file), default_encoding='utf-8')
-                if 'http_api' not in config or 'key' not in config['http_api']:
+                if 'api' not in config or 'key' not in config['api']:
                     await sleep(2)
                 else:
                     self.tribler_config = config
-                    self._logger.info("Loaded API key: %s" % self.tribler_config['http_api']['key'])
+                    self._logger.info("Loaded API key: %s" % self.tribler_config['api']['key'])
                     return True
 
         return True
