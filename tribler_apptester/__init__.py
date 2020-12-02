@@ -1,1 +1,0 @@
-TRIBLER_VERSION = "7.5"
