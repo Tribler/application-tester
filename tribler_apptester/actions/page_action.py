@@ -11,12 +11,12 @@ class PageAction(ClickSequenceAction):
         'discovered': ['window.left_menu_button_discovered'],
         'downloads': ['window.left_menu_button_downloads'],
         'my_channel': ['window.left_menu_button_my_channel'],
-        'search': ['window.left_menu_button_search'],
+        'search': [],
         'subscriptions': ['window.left_menu_button_subscriptions'],
         'video_player': ['window.left_menu_button_video_player'],
         'token_balance': ['window.token_balance_widget'],
         'settings': ['window.settings_button'],
-        'market': ['window.token_balance_widget', 'window.trade_button'],
+        'market': [],
         'trust_graph': ['window.left_menu_button_trust_graph']
     }
 
