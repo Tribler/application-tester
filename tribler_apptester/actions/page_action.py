@@ -10,7 +10,6 @@ class PageAction(ClickSequenceAction):
     BUTTONS_TO_PAGES = {
         'discovered': ['window.left_menu_button_discovered'],
         'downloads': ['window.left_menu_button_downloads'],
-        'my_channel': ['window.left_menu_button_my_channel'],
         'search': [],
         'token_balance': ['window.token_balance_widget'],
         'settings': ['window.settings_button'],
