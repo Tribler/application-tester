@@ -45,6 +45,7 @@ class Executor(object):
         self.args = args
         self.tribler_path = args.tribler_executable
         self.code_port = args.codeport
+        self.api_port = args.apiport
         self._logger = logging.getLogger(self.__class__.__name__)
         self.allow_plain_downloads = args.plain
         self.magnets_file_path = args.magnetsfile
@@ -99,7 +100,7 @@ class Executor(object):
             self._logger.warning("Loading Tribler config loaded, aborting")
             ensure_future(self.stop(1))
         else:
-            self.request_manager = HTTPRequestManager(self.tribler_config['api']['key'])
+            self.request_manager = HTTPRequestManager(self.tribler_config['api']['key'], self.api_port)
             await self.check_tribler_started()
 
     async def check_tribler_started(self):
