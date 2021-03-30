@@ -10,9 +10,10 @@ class HTTPRequestManager(object):
     This class manages requests to the Tribler core.
     """
 
-    def __init__(self, api_key):
+    def __init__(self, api_key, api_port):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.headers = {'User-Agent': 'Tribler application tester', 'X-Api-Key': api_key}
+        self.api_port = api_port
         self.tribler_start_time = None
 
         # Create the output directory if it does not exist yet
@@ -38,7 +39,7 @@ class HTTPRequestManager(object):
         """
         async with aiohttp.ClientSession() as client:
             start_time = int(round(time.time() * 1000))
-            response = await client.get("http://localhost:8085/%s" % endpoint, headers=self.headers)
+            response = await client.get(f"http://localhost:{self.api_port}/{endpoint}", headers=self.headers)
             json_response = await response.json()
             self.write_request_time(endpoint, start_time)
             return json_response
@@ -78,7 +79,7 @@ class HTTPRequestManager(object):
         Get the current state of the Tribler instance
         """
         async with aiohttp.ClientSession() as client:
-            response = await client.get("http://localhost:8085/state", headers=self.headers)
+            response = await client.get(f"http://localhost:{self.api_port}/state", headers=self.headers)
             return await response.json()
 
     async def is_tribler_started(self):
