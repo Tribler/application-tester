@@ -14,7 +14,6 @@ class PageAction(ClickSequenceAction):
         'token_balance': ['window.token_balance_widget'],
         'settings': ['window.settings_button'],
         'market': [],
-        'trust_graph': ['window.left_menu_button_trust_graph']
     }
 
     def __init__(self, page_name):
