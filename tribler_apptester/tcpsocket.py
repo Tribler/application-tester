@@ -22,7 +22,11 @@ class TriblerCodeClient(object):
 
     async def read_loop(self):
         while True:
-            data = await self.reader.readline()
+            try:
+                data = await self.reader.readline()
+            except ConnectionResetError:
+                break
+
             if not data:
                 break
             self.data_received(data)
