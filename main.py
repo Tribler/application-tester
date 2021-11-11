@@ -10,7 +10,8 @@ from tribler_apptester.executor import Executor
 
 sentry_sdk.init(
     os.environ.get('SENTRY_URL', 'https://e489691c2e214c03961e18069a71d76c@sentry.tribler.org/6'),
-    traces_sample_rate=1.0
+    traces_sample_rate=1.0,
+    ignore_errors=[KeyboardInterrupt],
 )
 
 if __name__ == "__main__":
