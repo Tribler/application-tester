@@ -1,4 +1,4 @@
-test_exception=10
+test_exception=0
 random_page=20
 search=15
 start_download=15
