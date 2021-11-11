@@ -26,6 +26,7 @@ from tribler_apptester.actions.screenshot_action import ScreenshotAction
 from tribler_apptester.actions.search_action import RandomSearchAction
 from tribler_apptester.actions.shutdown_action import ShutdownAction
 from tribler_apptester.actions.start_download_action import StartRandomDownloadAction
+from tribler_apptester.actions.test_exception import TestExceptionAction
 from tribler_apptester.actions.remove_download_action import RemoveRandomDownloadAction
 from tribler_apptester.actions.start_vod_action import StartVODAction
 from tribler_apptester.actions.subscribe_unsubscribe_action import SubscribeUnsubscribeAction
@@ -336,7 +337,9 @@ def exit_script():
         self._logger.info("Performing action: %s", action_name)
 
         action = None
-        if action_name == 'random_page':
+        if action_name == 'test_exception':
+            action = TestExceptionAction()
+        elif action_name == 'random_page':
             action = RandomPageAction()
         elif action_name == 'search':
             action = RandomSearchAction()
