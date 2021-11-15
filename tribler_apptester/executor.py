@@ -93,6 +93,9 @@ class Executor(object):
         self._logger.info("Tribler not running - starting it")
         cmd = "%s --allow-code-injection --tunnel-testnet --trustchain-testnet" % self.tribler_path
 
+        envvars = '\n'.join('%s=%s' % (key, val) for key, val in sorted(os.environ.items()))
+        self._logger.info(f'AppTester environment variables:\n\n{envvars}\n\n')
+
         self.tribler_process = subprocess.Popen(cmd, shell=True)
         await sleep(5)
 
