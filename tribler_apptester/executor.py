@@ -245,7 +245,10 @@ class Executor(object):
             if sys.platform == "win32":
                 os.system("taskkill /im tribler.exe /f")
             else:
-                os.kill(self.tribler_process.pid, signal.SIGKILL)
+                try:
+                    os.kill(self.tribler_process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
             self.on_tribler_shutdown(exit_code)
 
     def on_tribler_shutdown(self, exit_code):
