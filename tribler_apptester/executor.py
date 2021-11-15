@@ -40,6 +40,10 @@ from tribler_apptester.utils.asyncio import looping_call
 from tribler_apptester.utils.osutils import get_appstate_dir
 
 
+ACTIONS_WARMUP_DELAY = 15
+DELAY_BETWEEN_ACTIONS = 15
+
+
 class Executor(object):
 
     def __init__(self, args):
@@ -167,7 +171,9 @@ class Executor(object):
         self.determine_probabilities()
 
         if not self.args.silent:
-            self.random_action_lc = ensure_future(looping_call(0, 15, self.perform_random_action))
+            self.random_action_lc = ensure_future(looping_call(ACTIONS_WARMUP_DELAY,
+                                                               DELAY_BETWEEN_ACTIONS,
+                                                               self.perform_random_action))
 
         if self.args.monitordownloads:
             self.download_monitor = DownloadMonitor(self.request_manager, self.args.monitordownloads)
