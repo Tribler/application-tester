@@ -53,9 +53,10 @@ class TriblerCodeClient(object):
             result_value = b64decode(parts[1])
             task_id = parts[2]
             self.executor.on_task_result(task_id, result_value)
-        elif data.startswith(b'crash'):
+        elif data.startswith(b'crash '):
             parts = data.split(b' ')
             if len(parts) != 2:
+                self._logger.error("Icorrect crash data received: %r" % data)
                 return
             traceback = b64decode(parts[1])
             self.executor.on_tribler_crash(traceback)
