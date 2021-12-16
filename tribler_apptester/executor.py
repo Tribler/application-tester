@@ -348,35 +348,39 @@ def exit_script():
             return
         self._logger.info("Performing action: %s", action_name)
 
-        action = None
-        if action_name == 'test_exception':
-            action = TestExceptionAction()
-        elif action_name == 'random_page':
-            action = RandomPageAction()
-        elif action_name == 'search':
-            action = RandomSearchAction()
-        elif action_name == 'start_download':
-            action = StartRandomDownloadAction(self.magnets_file_path)
-        elif action_name == 'remove_download':
-            action = RemoveRandomDownloadAction()
-        elif action_name == 'explore_download':
-            action = ExploreDownloadAction()
-        elif action_name == 'scroll_discovered':
-            action = ScrollDiscoveredAction()
-        elif action_name == 'explore_channel':
-            action = ExploreChannelAction()
-        elif action_name == 'screenshot':
-            action = ScreenshotAction()
-        elif action_name == 'start_vod':
-            action = StartVODAction()
-        elif action_name == 'change_anonymity':
-            action = ChangeAnonymityAction(allow_plain=self.allow_plain_downloads)
-        elif action_name == 'subscribe_unsubscribe':
-            action = SubscribeUnsubscribeAction()
-        elif action_name == 'change_download_files':
-            action = ChangeDownloadFilesAction()
-        elif action_name == 'manage_channel':
-            action = ManageChannelAction()
+        try:
+            action = None
+            if action_name == 'test_exception':
+                action = TestExceptionAction()
+            elif action_name == 'random_page':
+                action = RandomPageAction()
+            elif action_name == 'search':
+                action = RandomSearchAction()
+            elif action_name == 'start_download':
+                action = StartRandomDownloadAction(self.magnets_file_path)
+            elif action_name == 'remove_download':
+                action = RemoveRandomDownloadAction()
+            elif action_name == 'explore_download':
+                action = ExploreDownloadAction()
+            elif action_name == 'scroll_discovered':
+                action = ScrollDiscoveredAction()
+            elif action_name == 'explore_channel':
+                action = ExploreChannelAction()
+            elif action_name == 'screenshot':
+                action = ScreenshotAction()
+            elif action_name == 'start_vod':
+                action = StartVODAction()
+            elif action_name == 'change_anonymity':
+                action = ChangeAnonymityAction(allow_plain=self.allow_plain_downloads)
+            elif action_name == 'subscribe_unsubscribe':
+                action = SubscribeUnsubscribeAction()
+            elif action_name == 'change_download_files':
+                action = ChangeDownloadFilesAction()
+            elif action_name == 'manage_channel':
+                action = ManageChannelAction()
+        except Exception as e:
+            self._logger.exception(e)
+            return
 
         if action:
             try:
