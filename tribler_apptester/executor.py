@@ -128,7 +128,7 @@ class Executor(object):
             self._logger.info("Tribler started - opening code socket")
             await self.open_code_socket()
         else:
-            self._logger.error("Tribler did not seem to start within reasonable time, bailing out")
+            self._logger.error("AppTester could not start Tribler within a reasonable time")
             self.shutdown_tester(1)
 
     async def load_tribler_config(self):
@@ -285,9 +285,8 @@ class Executor(object):
         """
         Tribler has crashed. Handle the error and shut everything down.
         """
-        self._logger.error("********** TRIBLER CRASHED **********")
-        self._logger.error("Tribler crashed after uptime of %s sec! Stack trace: %s",
-                           self.uptime, traceback.decode('utf-8'))
+        self._logger.error("Tribler that run by AppTester crashed after uptime of %s sec! Stack trace:\n%s",
+                           self.uptime, traceback.decode('utf-8', errors='replace'))
         self.tribler_crashed = True
         ensure_future(self.stop(1))
 
@@ -388,4 +387,4 @@ def exit_script():
             except Exception as e:
                 self._logger.exception(e)
         else:
-            self._logger.error("Action %s does not exist!", action)
+            self._logger.error("Action %s does not exist", action)
