@@ -30,6 +30,3 @@ if model is None or model.rowCount() == 0:
         self.add_action(ConditionalAction("window.discovered_page.subscribe_button.isVisible()", click_action))
         self.add_action(WaitAction(2000))
         self.add_action(ClickAction('window.discovered_page.channel_back_button'))
-
-    def required_imports(self):
-        return ["from random import randint"]
