@@ -18,9 +18,9 @@ class ConditionalAction(Action):
     def get_required_imports(self):
         result = set(self.required_imports())
         if self.if_action:
-            result.update(self.if_action.required_imports())
+            result.update(self.if_action.get_required_imports())
         if self.else_action:
-            result.update(self.else_action.required_imports())
+            result.update(self.else_action.get_required_imports())
         return sorted(result)
 
     def action_code(self):
