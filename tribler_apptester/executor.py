@@ -317,11 +317,12 @@ class Executor(object):
         self.pending_tasks[task_id] = task_future
 
         code = """return_value = ''
+app_tester_dir = %r
 
 def exit_script():
     import sys
     print('Execution of task %s completed')
-    sys.exit(0)\n\n""" % task_id.decode('utf-8')
+    sys.exit(0)\n\n""" % (os.getcwd(), task_id.decode('utf-8'))
 
         code += action.generate_code() + '\nexit_script()'
         base64_code = b64encode(code.encode('utf-8'))
