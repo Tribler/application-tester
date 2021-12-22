@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import subprocess
-from asyncio import create_task, get_event_loop, sleep, Future
+from asyncio import create_task, get_event_loop, sleep, Future, wait_for
 from base64 import b64encode
 from bisect import bisect
 from distutils.version import LooseVersion
@@ -39,6 +39,10 @@ from tribler_apptester.tcpsocket import TriblerCodeClient
 from tribler_apptester.utils.asyncio import looping_call
 from tribler_apptester.utils.osutils import get_appstate_dir, quote_path_with_spaces
 
+CHECK_PROCESS_STARTED_TIMEOUT = 60
+CHECK_PROCESS_STARTED_INTERVAL = 1
+
+
 ACTIONS_WARMUP_DELAY = 15
 DELAY_BETWEEN_ACTIONS = 15
 
@@ -55,8 +59,10 @@ class Executor(object):
         self.magnets_file_path = args.magnetsfile
         self.pending_tasks = {}  # Dictionary of pending tasks
         self.probabilities = []
+        self.apptester_start_time = time.time()
+        self.tribler_start_time = None
+        self.tribler_is_running = False
         self.code_client = TriblerCodeClient("localhost", self.code_port, self)
-        self.start_time = time.time()
         self.tribler_crashed = False
         self.download_monitor = None
         self.resource_monitor = None
@@ -80,14 +86,18 @@ class Executor(object):
         if self.args.duration:
             self._logger.info("Scheduled to stop tester after %d seconds" % self.args.duration)
             await sleep(self.args.duration)
+            self._logger.info("Testing time is over, stop Tribler")
             await self.stop(0)
         else:
             self._logger.info("Running application tester for an indefinite period")
 
     def check_tribler_alive(self):
-        if self.tribler_process and self.tribler_process.poll() is not None and not self.shutting_down:
-            self._logger.warning("Tribler subprocess dead while not at the end of our run!")
-            create_task(self.stop(1))
+        if self.tribler_process and self.tribler_process.poll() is not None:
+            self._logger.info("Tribler is not running!")
+            self.tribler_is_running = False
+            if not self.shutting_down:
+                self._logger.warning("Tribler subprocess dead while not at the end of our run!")
+                create_task(self.stop(1))
 
     async def start_tribler(self):
         """
@@ -100,7 +110,13 @@ class Executor(object):
         self._logger.info(f'AppTester environment variables:\n\n{envvars}\n\n')
 
         self.tribler_process = subprocess.Popen(cmd, shell=True)
-        await sleep(5)
+        if not await self.wait_for_tribler_process_start():
+            self._logger.error(f'Tribler process finished unexpectedly '
+                               f'with the return code {self.tribler_process.returncode}')
+            return
+
+        self.tribler_is_running = True
+        self.tribler_start_time = time.time()
 
         loaded_config = await self.load_tribler_config()
         if not loaded_config:
@@ -108,27 +124,29 @@ class Executor(object):
             create_task(self.stop(1))
         else:
             self.request_manager = HTTPRequestManager(self.tribler_config['api']['key'], self.api_port)
-            await self.check_tribler_started()
+            self.request_manager.tribler_start_time = int(round(time.time() * 1000))
+            self._logger.info("Tribler started - start testing")
+            await self.do_testing()
 
-    async def check_tribler_started(self):
+    async def wait_for_tribler_process_start(self):
+        t1 = time.time()
+        while time.time() - t1 <= CHECK_PROCESS_STARTED_TIMEOUT:
+            if self.tribler_process.poll() is not None:
+                self._logger.error("Tribler process terminated suddenly")
+                return False
 
-        success = False
-        for attempt in range(1, 11):
-            self._logger.info("Checking whether Tribler has started (%d/10)", attempt)
-            started = await self.request_manager.is_tribler_started()
-            if started:
-                success = True
-                self.request_manager.tribler_start_time = int(round(time.time() * 1000))
-                break
+            try:
+                await wait_for(self.code_client.connect(), timeout=1)
+            except Exception as e:
+                self._logger.debug(f"Cannot connect to the code executor port: {e.__class__.__name__}: {e}")
             else:
-                await sleep(5)
+                self._logger.info("Successfully connected to the code executor port")
+                return True
 
-        if success:
-            self._logger.info("Tribler started - opening code socket")
-            await self.open_code_socket()
-        else:
-            self._logger.error("AppTester could not start Tribler within a reasonable time")
-            self.shutdown_tester(1)
+            await sleep(CHECK_PROCESS_STARTED_INTERVAL)
+
+        self._logger.error("Cannot connect to the code executor port in specified time")
+        return False
 
     async def load_tribler_config(self):
         """
@@ -162,10 +180,8 @@ class Executor(object):
 
         return True
 
-    async def open_code_socket(self):
+    async def do_testing(self):
         self._logger.info("Opening Tribler code socket connection to port %d" % self.code_client.port)
-
-        await self.code_client.connect()
 
         self.determine_probabilities()
 
@@ -221,8 +237,6 @@ class Executor(object):
         if self.random_action_lc:
             self.random_action_lc.cancel()
             self.random_action_lc = None
-        if self.check_tribler_process_lc:
-            self.check_tribler_process_lc.cancel()
 
         self.execute_action(ShutdownAction())
 
@@ -239,12 +253,14 @@ class Executor(object):
         success = False
         for attempt in range(1, 11):
             self._logger.info("Checking whether Tribler has stopped (%d/10)", attempt)
-            tribler_started = await self.request_manager.is_tribler_started()
-            if not tribler_started:
+            if not self.tribler_is_running:
                 success = True
                 break
             else:
                 await sleep(5)
+
+        if self.check_tribler_process_lc:
+            self.check_tribler_process_lc.cancel()
 
         if success:
             self.on_tribler_shutdown(exit_code)
@@ -270,7 +286,7 @@ class Executor(object):
 
     @property
     def uptime(self):
-        return time.time() - self.start_time
+        return time.time() - self.apptester_start_time
 
     def on_task_result(self, task_id, result):
         """

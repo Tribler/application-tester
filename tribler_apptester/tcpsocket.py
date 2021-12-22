@@ -1,5 +1,5 @@
 import logging
-from asyncio import open_connection, get_event_loop, ensure_future
+from asyncio import open_connection, ensure_future
 from base64 import b64decode
 
 
@@ -15,8 +15,7 @@ class TriblerCodeClient(object):
         self.writer = None
 
     async def connect(self):
-        loop = get_event_loop()
-        self.reader, self.writer = await open_connection(self.host, self.port, loop=loop)
+        self.reader, self.writer = await open_connection(self.host, self.port)  # can rise ConnectionRefusedError
         self._logger.info("Code socket opened!")
         ensure_future(self.read_loop())
 
