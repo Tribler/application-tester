@@ -325,6 +325,8 @@ def exit_script():
     sys.exit(0)\n\n""" % (os.getcwd(), task_id.decode('utf-8'))
 
         code += action.generate_code() + '\nexit_script()'
+        self._logger.debug(f"Code for execution:\n{code}")
+
         base64_code = b64encode(code.encode('utf-8'))
 
         # Let Tribler execute this code
