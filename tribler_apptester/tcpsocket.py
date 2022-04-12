@@ -62,4 +62,8 @@ class TriblerCodeClient(object):
             self.executor.on_tribler_crash(traceback)
 
     def run_code(self, code, task_id):
+        if self.writer is None:
+            self._logger.error("Writer is not available")
+            return
+
         self.writer.write(b"%s %s\n" % (code, task_id))
