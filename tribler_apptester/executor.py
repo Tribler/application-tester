@@ -37,8 +37,7 @@ from tribler_apptester.monitors.resource_monitor import ResourceMonitor
 from tribler_apptester.requestmgr import HTTPRequestManager
 from tribler_apptester.tcpsocket import TriblerCodeClient
 from tribler_apptester.utils.asyncio import looping_call
-from tribler_apptester.utils.osutils import get_appstate_dir
-
+from tribler_apptester.utils.osutils import get_appstate_dir, quote_path_with_spaces
 
 ACTIONS_WARMUP_DELAY = 15
 DELAY_BETWEEN_ACTIONS = 15
@@ -48,7 +47,7 @@ class Executor(object):
 
     def __init__(self, args):
         self.args = args
-        self.tribler_path = args.tribler_executable
+        self.tribler_path = quote_path_with_spaces(args.tribler_executable)
         self.code_port = args.codeport
         self.api_port = args.apiport
         self._logger = logging.getLogger(self.__class__.__name__)
