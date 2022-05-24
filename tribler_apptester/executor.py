@@ -1,16 +1,19 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
 import os
 import subprocess
+import sys
+import time
 from asyncio import create_task, get_event_loop, sleep, Future, wait_for
 from base64 import b64encode
 from bisect import bisect
 from distutils.version import LooseVersion
 from pathlib import Path
 from random import random, randint, choice
-import sys
-import time
+from typing import Optional
 
 import signal
 
@@ -67,9 +70,9 @@ class Executor(object):
         self.tribler_is_running = False
         self.code_client = TriblerCodeClient("localhost", self.code_port, self)
         self.tribler_crashed = False
-        self.download_monitor = None
-        self.resource_monitor = None
-        self.ipv8_monitor = None
+        self.download_monitor: Optional[DownloadMonitor] = None
+        self.resource_monitor: Optional[ResourceMonitor] = None
+        self.ipv8_monitor: Optional[IPv8Monitor] = None
         self.random_action_lc = None
         self.tribler_stopped_lc = None
         self.tribler_stopped_checks = 1
@@ -219,22 +222,12 @@ class Executor(object):
 
         self.determine_probabilities()
 
+        self.start_monitors()
+
         if not self.args.silent:
             self.random_action_lc = create_task(looping_call(ACTIONS_WARMUP_DELAY,
                                                                DELAY_BETWEEN_ACTIONS,
                                                                self.perform_random_action))
-
-        if self.args.monitordownloads:
-            self.download_monitor = DownloadMonitor(self.request_manager, self.args.monitordownloads)
-            self.download_monitor.start()
-
-        if self.args.monitorresources:
-            self.resource_monitor = ResourceMonitor(self.request_manager, self.args.monitorresources)
-            self.resource_monitor.start()
-
-        if self.args.monitoripv8:
-            self.ipv8_monitor = IPv8Monitor(self.request_manager, self.args.monitoripv8)
-            self.ipv8_monitor.start()
 
     def determine_probabilities(self):
         self._logger.info("Determining probabilities of actions")
@@ -253,6 +246,28 @@ class Executor(object):
 
                 self.probabilities.append((parts[0], int(parts[1])))
 
+    def start_monitors(self):
+        if self.args.monitordownloads:
+            self.download_monitor = DownloadMonitor(self.request_manager, self.args.monitordownloads)
+            self.download_monitor.start()
+
+        if self.args.monitorresources:
+            self.resource_monitor = ResourceMonitor(self.request_manager, self.args.monitorresources)
+            self.resource_monitor.start()
+
+        if self.args.monitoripv8:
+            self.ipv8_monitor = IPv8Monitor(self.request_manager, self.args.monitoripv8)
+            self.ipv8_monitor.start()
+
+    def stop_monitors(self):
+        if self.download_monitor:
+            self.download_monitor.stop()
+            self.download_monitor = None
+
+        if self.resource_monitor:
+            self.resource_monitor.stop()
+            self.resource_monitor = None
+
     async def stop(self, exit_code):
         """
         Stop the application. First, shutdown Tribler (gracefully) and then shutdown the application tester.
@@ -262,12 +277,9 @@ class Executor(object):
 
         self.shutting_down = True
         self._logger.info("About to shutdown AppTester")
-        if self.download_monitor:
-            self.download_monitor.stop()
-            self.download_monitor = None
-        if self.resource_monitor:
-            self.resource_monitor.stop()
-            self.resource_monitor = None
+
+        self.stop_monitors()
+
         if self.random_action_lc:
             self.random_action_lc.cancel()
             self.random_action_lc = None
