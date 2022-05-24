@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import subprocess
-from asyncio import get_event_loop, ensure_future, sleep, Future
+from asyncio import create_task, get_event_loop, sleep, Future
 from base64 import b64encode
 from bisect import bisect
 from distutils.version import LooseVersion
@@ -75,7 +75,7 @@ class Executor(object):
         await self.start_tribler()
 
         # Start the check to see if the sub-process is alive
-        self.check_tribler_process_lc = ensure_future(looping_call(0, 5, self.check_tribler_alive))
+        self.check_tribler_process_lc = create_task(looping_call(0, 5, self.check_tribler_alive))
 
         if self.args.duration:
             self._logger.info("Scheduled to stop tester after %d seconds" % self.args.duration)
@@ -87,7 +87,7 @@ class Executor(object):
     def check_tribler_alive(self):
         if self.tribler_process and self.tribler_process.poll() is not None and not self.shutting_down:
             self._logger.warning("Tribler subprocess dead while not at the end of our run!")
-            ensure_future(self.stop(1))
+            create_task(self.stop(1))
 
     async def start_tribler(self):
         """
@@ -105,7 +105,7 @@ class Executor(object):
         loaded_config = await self.load_tribler_config()
         if not loaded_config:
             self._logger.warning("Loading Tribler config loaded, aborting")
-            ensure_future(self.stop(1))
+            create_task(self.stop(1))
         else:
             self.request_manager = HTTPRequestManager(self.tribler_config['api']['key'], self.api_port)
             await self.check_tribler_started()
@@ -170,7 +170,7 @@ class Executor(object):
         self.determine_probabilities()
 
         if not self.args.silent:
-            self.random_action_lc = ensure_future(looping_call(ACTIONS_WARMUP_DELAY,
+            self.random_action_lc = create_task(looping_call(ACTIONS_WARMUP_DELAY,
                                                                DELAY_BETWEEN_ACTIONS,
                                                                self.perform_random_action))
 
@@ -224,7 +224,7 @@ class Executor(object):
         if self.check_tribler_process_lc:
             self.check_tribler_process_lc.cancel()
 
-        ensure_future(self.execute_action(ShutdownAction()))
+        self.execute_action(ShutdownAction())
 
         try:
             if sys.platform == "win32":
@@ -287,7 +287,7 @@ class Executor(object):
         self._logger.error("Tribler that run by AppTester crashed after uptime of %s sec! Stack trace:\n%s",
                            self.uptime, traceback.decode('utf-8', errors='replace'))
         self.tribler_crashed = True
-        ensure_future(self.stop(1))
+        create_task(self.stop(1))
 
     def weighted_choice(self, choices):
         if len(choices) == 0:
