@@ -268,6 +268,10 @@ class Executor(object):
             self.resource_monitor.stop()
             self.resource_monitor = None
 
+        if self.ipv8_monitor:
+            self.ipv8_monitor.stop()
+            self.ipv8_monitor = None
+
     async def stop(self, exit_code):
         """
         Stop the application. First, shutdown Tribler (gracefully) and then shutdown the application tester.
