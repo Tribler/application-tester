@@ -7,13 +7,13 @@ import os
 import subprocess
 import sys
 import time
-from asyncio import create_task, get_event_loop, sleep, Future, wait_for
+from asyncio import Task, create_task, get_event_loop, sleep, Future, wait_for
 from base64 import b64encode
 from bisect import bisect
 from distutils.version import LooseVersion
 from pathlib import Path
 from random import random, randint, choice
-from typing import Optional
+from typing import Dict, Optional
 
 import signal
 
@@ -47,7 +47,7 @@ CHECK_PROCESS_STARTED_TIMEOUT = 60
 CHECK_PROCESS_STARTED_INTERVAL = 1
 
 ACTIONS_WARMUP_DELAY = 15
-DELAY_BETWEEN_ACTIONS = 15
+DELAY_BETWEEN_ACTIONS = 5
 
 SHUTDOWN_TIMEOUT = 30
 
@@ -63,7 +63,7 @@ class Executor(object):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.allow_plain_downloads = args.plain
         self.magnets_file_path = args.magnetsfile
-        self.pending_tasks = {}  # Dictionary of pending tasks
+        self.pending_tasks: Dict[bytes, Future] = {}  # Dictionary of pending tasks
         self.probabilities = []
         self.apptester_start_time = time.time()
         self.tribler_start_time = None
@@ -73,7 +73,7 @@ class Executor(object):
         self.download_monitor: Optional[DownloadMonitor] = None
         self.resource_monitor: Optional[ResourceMonitor] = None
         self.ipv8_monitor: Optional[IPv8Monitor] = None
-        self.random_action_lc = None
+        self.testing_task: Optional[Task] = None
         self.tribler_stopped_lc = None
         self.tribler_stopped_checks = 1
         self.tribler_process = None
@@ -133,7 +133,7 @@ class Executor(object):
             self.request_manager = HTTPRequestManager(self.tribler_config['api']['key'], self.api_port)
             self.request_manager.tribler_start_time = int(round(time.time() * 1000))
             self._logger.info("Tribler started - start testing")
-            await self.do_testing()
+            self.start_testing()
 
     async def wait_for_tribler_process_start(self):
         t1 = time.time()
@@ -217,7 +217,7 @@ class Executor(object):
 
         return True
 
-    async def do_testing(self):
+    def start_testing(self):
         self._logger.info("Opening Tribler code socket connection to port %d" % self.code_client.port)
 
         self.determine_probabilities()
@@ -225,9 +225,22 @@ class Executor(object):
         self.start_monitors()
 
         if not self.args.silent:
-            self.random_action_lc = create_task(looping_call(ACTIONS_WARMUP_DELAY,
-                                                               DELAY_BETWEEN_ACTIONS,
-                                                               self.perform_random_action))
+            self.testing_task = create_task(self.do_testing())
+
+    async def do_testing(self):
+        await asyncio.sleep(ACTIONS_WARMUP_DELAY)
+
+        while not self.shutting_down:
+            await self.perform_random_action()
+            if self.shutting_down:
+                break
+            await asyncio.sleep(DELAY_BETWEEN_ACTIONS)
+
+        self._logger.info("Testing is stopped")
+
+        if self.tribler_is_running and not self.tribler_crashed:
+            self._logger.info("Executing Shutdown action")
+            await self.perform_action(ShutdownAction())
 
     def determine_probabilities(self):
         self._logger.info("Determining probabilities of actions")
@@ -294,16 +307,13 @@ class Executor(object):
 
         self.stop_monitors()
 
-        if self.random_action_lc:
-            self.random_action_lc.cancel()
-            self.random_action_lc = None
-
         if self.check_tribler_process_lc:
             self.check_tribler_process_lc.cancel()
 
         if self.code_client.connected:
-            self._logger.info("Executing Shutdown action")
-            await self.execute_action(ShutdownAction())
+            if self.testing_task is not None:
+                await self.testing_task
+
             self._logger.info("Waiting for Tribler process to finish")
             await self.wait_for_tribler_process_to_finish()
 
@@ -347,6 +357,8 @@ class Executor(object):
         self._logger.error("Tribler that run by AppTester crashed after uptime of %s sec! Stack trace:\n%s",
                            self.uptime, traceback.decode('utf-8', errors='replace'))
         self.tribler_crashed = True
+        for task in self.pending_tasks.values():
+            task.set_result(None)  # should set exception instead, but it requries further refactoring
         create_task(self.stop(1))
 
     def weighted_choice(self, choices):
@@ -447,12 +459,19 @@ def exit_script():
             action = WaitAction(1000)
         return action
 
-    def perform_random_action(self):
+    async def perform_random_action(self):
         action = self.get_random_action()
-        self.perform_action(action)
+        await self.perform_action(action)
 
-    def perform_action(self, action):
+    def perform_action(self, action) -> Future:
+        if not self.tribler_is_running:
+            msg = "Cannot execute action: Tribler is not running"
+            self._logger.error(msg)
+            raise RuntimeError(msg)
         try:
-            self.execute_action(action)
+            return self.execute_action(action)
         except Exception as e:
             self._logger.exception(e)
+        dummy_future = Future()
+        dummy_future.set_result(None)
+        return dummy_future
