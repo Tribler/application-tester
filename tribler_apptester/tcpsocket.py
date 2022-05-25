@@ -13,9 +13,11 @@ class TriblerCodeClient(object):
         self.buffer = b''
         self.reader = None
         self.writer = None
+        self.connected = False
 
     async def connect(self):
         self.reader, self.writer = await open_connection(self.host, self.port)  # can rise ConnectionRefusedError
+        self.connected = True
         self._logger.info("Code socket opened!")
         ensure_future(self.read_loop())
 

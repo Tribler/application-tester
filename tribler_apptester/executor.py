@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -42,9 +43,11 @@ from tribler_apptester.utils.osutils import get_appstate_dir, quote_path_with_sp
 CHECK_PROCESS_STARTED_TIMEOUT = 60
 CHECK_PROCESS_STARTED_INTERVAL = 1
 
-
 ACTIONS_WARMUP_DELAY = 15
 DELAY_BETWEEN_ACTIONS = 15
+
+SHUTDOWN_TIMEOUT = 30
+
 
 
 class Executor(object):
@@ -92,8 +95,9 @@ class Executor(object):
             self._logger.info("Running application tester for an indefinite period")
 
     def check_tribler_alive(self):
-        if self.tribler_process and self.tribler_process.poll() is not None:
-            self._logger.info("Tribler is not running!")
+        return_code = self.tribler_process.poll()
+        if self.tribler_process and return_code is not None:
+            self._logger.info(f"Tribler is not running! Code: {return_code}")
             self.tribler_is_running = False
             if not self.shutting_down:
                 self._logger.warning("Tribler subprocess dead while not at the end of our run!")
@@ -131,8 +135,9 @@ class Executor(object):
     async def wait_for_tribler_process_start(self):
         t1 = time.time()
         while time.time() - t1 <= CHECK_PROCESS_STARTED_TIMEOUT:
-            if self.tribler_process.poll() is not None:
-                self._logger.error("Tribler process terminated suddenly")
+            return_code = self.tribler_process.poll()
+            if return_code is not None:
+                self._logger.error(f"Tribler process terminated suddenly. Code: {return_code}")
                 return False
 
             try:
@@ -147,6 +152,35 @@ class Executor(object):
 
         self._logger.error("Cannot connect to the code executor port in specified time")
         return False
+
+    async def wait_for_tribler_process_to_finish(self, timeout=SHUTDOWN_TIMEOUT, check_interval=0.5) -> bool:
+        """
+        Waits for the Tribler process finishing. Returns True if the process was finished successfully, False otherwise.
+        """
+        t1 = time.time()
+        while self.tribler_is_running:
+            await asyncio.sleep(check_interval)
+            return_code = self.tribler_process.poll()
+            self.tribler_is_running = return_code is None
+            if not self.tribler_is_running:
+                self._logger.info(f'Tribler process stopped successfully. Code: {return_code}')
+                return True
+
+            elapsed_time = time.time() - t1
+            self._logger.info(f"Waiting... Elapsed time: {elapsed_time}, timeout: {timeout}")
+            if elapsed_time >= timeout:
+                self._logger.warning('Tribler process did not stop in specified time')
+                return False
+
+    def kill_tribler_process(self):
+        if sys.platform == "win32":
+            os.system("taskkill /im tribler.exe")
+        else:
+            sig = signal.SIGINT if sys.platform == "darwin" else signal.SIGTERM
+            try:
+                os.kill(self.tribler_process.pid, sig)
+            except ProcessLookupError:
+                pass
 
     async def load_tribler_config(self):
         """
@@ -227,7 +261,7 @@ class Executor(object):
             return
 
         self.shutting_down = True
-        self._logger.info("About to shutdown Tribler")
+        self._logger.info("About to shutdown AppTester")
         if self.download_monitor:
             self.download_monitor.stop()
             self.download_monitor = None
@@ -238,45 +272,26 @@ class Executor(object):
             self.random_action_lc.cancel()
             self.random_action_lc = None
 
-        self.execute_action(ShutdownAction())
-
-        try:
-            if sys.platform == "win32":
-                os.system("taskkill /im tribler.exe")
-            elif sys.platform == "darwin":
-                os.kill(self.tribler_process.pid, signal.SIGINT)
-            else:
-                os.kill(self.tribler_process.pid, signal.SIGTERM)
-        except ProcessLookupError:
-            pass
-
-        success = False
-        for attempt in range(1, 11):
-            self._logger.info("Checking whether Tribler has stopped (%d/10)", attempt)
-            if not self.tribler_is_running:
-                success = True
-                break
-            else:
-                await sleep(5)
-
         if self.check_tribler_process_lc:
             self.check_tribler_process_lc.cancel()
 
-        if success:
-            self.on_tribler_shutdown(exit_code)
-        else:
-            self._logger.warning("Tribler did not shutdown in reasonable time; force kill it")
-            if sys.platform == "win32":
-                os.system("taskkill /im tribler.exe /f")
-            else:
-                try:
-                    os.kill(self.tribler_process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-            self.on_tribler_shutdown(exit_code)
+        if self.code_client.connected:
+            self._logger.info("Executing Shutdown action")
+            await self.execute_action(ShutdownAction())
+            self._logger.info("Waiting for Tribler process to finish")
+            await self.wait_for_tribler_process_to_finish()
 
-    def on_tribler_shutdown(self, exit_code):
-        self._logger.info("Tribler is stopped, shutting down application tester")
+        if self.tribler_is_running:
+            self._logger.warning("Tribler process did not finished in reasonable time; force kill it")
+            self.kill_tribler_process()
+
+        if self.tribler_is_running:
+            self._logger.warning("Tribler process is still running...")
+            await self.wait_for_tribler_process_to_finish()
+            if self.tribler_is_running:
+                self._logger.error("Cannot stop Tribler process")
+
+        self._logger.info("Shutting down application tester")
         self.shutdown_tester(exit_code)
 
     def shutdown_tester(self, exit_code):
@@ -292,9 +307,12 @@ class Executor(object):
         """
         A task has completed. Invoke the task completion callback with the result.
         """
+        self._logger.info(f"Got response for task_id: {task_id.decode('utf-8')}")
         if task_id in self.pending_tasks:
             self.pending_tasks[task_id].set_result(result)
             self.pending_tasks.pop(task_id, None)
+        else:
+            self._logger.warning(f"task_id {task_id.decode('utf-8')} not found in pending tasks!")
 
     def on_tribler_crash(self, traceback):
         """
