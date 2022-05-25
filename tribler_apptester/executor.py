@@ -272,10 +272,20 @@ class Executor(object):
             self.ipv8_monitor.stop()
             self.ipv8_monitor = None
 
+    def terminate_pending_tasks(self):
+        self._logger.info("Terminate pending tasks")
+        for task_id, future in self.pending_tasks.items():
+            self._logger.info(f"Task {task_id.decode('utf-8')} terminated")
+            future.set_result(None)
+        self.pending_tasks.clear()
+
     async def stop(self, exit_code):
         """
         Stop the application. First, shutdown Tribler (gracefully) and then shutdown the application tester.
         """
+        if exit_code:
+            self.terminate_pending_tasks()
+
         if self.shutting_down:
             return
 
